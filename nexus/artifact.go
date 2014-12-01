@@ -4,15 +4,15 @@ import "strings"
 
 // A full Maven coordinate to a single artifact.
 type Artifact struct {
-	GroupId      string
-	ArtifactId   string
-	Version      string
-	Classifier   string
-	Extension    string
+	GroupId    string
+	ArtifactId string
+	Version    string
+	Classifier string
+	Extension  string
 }
 
 func (a *Artifact) String() string {
-	var parts = []string{ a.GroupId, a.ArtifactId, a.Version, a.Extension }
+	var parts = []string{a.GroupId, a.ArtifactId, a.Version, a.Extension}
 
 	if a.Classifier != "" {
 		parts = append(parts, a.Classifier)
@@ -31,15 +31,15 @@ func (a *Artifact) hash() string {
 }
 
 // Since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.
-// Artifact's hash method is used to make the keys.
+// Artifact's hash method is used to make the keys, since there's no Equals contract for maps to follow (like Java)
 type artifactSet struct {
-	data []*Artifact
+	data    []*Artifact
 	hashMap map[string]bool
 }
 
 func newArtifactSet() *artifactSet {
-	return &artifactSet {
-		data: []*Artifact{},
+	return &artifactSet{
+		data:    []*Artifact{},
 		hashMap: make(map[string]bool),
 	}
 }

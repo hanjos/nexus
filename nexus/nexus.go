@@ -1,12 +1,12 @@
 package nexus
 
 import (
-	"strconv"
-	"io"
 	"bytes"
-	"net/http"
-	"strings"
 	"encoding/json"
+	"io"
+	"net/http"
+	"strconv"
+	"strings"
 )
 
 // Interfaces with a Nexus instance.
@@ -28,10 +28,10 @@ type Nexus2x struct {
 
 // Creates a new Nexus client, using the default Client implementation.
 func New(url string) Client {
-	return &Nexus2x{ Url: url }
+	return &Nexus2x{Url: url}
 }
 
-// builds the proper URL with parameters for GET-ing
+// builds the proper URL with parameters for GET-ing.
 func (nexus *Nexus2x) fullUrlFor(query string, filter map[string]string) string {
 	params := []string{}
 
@@ -46,6 +46,7 @@ func (nexus *Nexus2x) fullUrlFor(query string, filter map[string]string) string 
 	}
 }
 
+// does the actual legwork, going to Nexus e validating the response.
 func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Response, error) {
 	get, err := http.NewRequest("GET", nexus.fullUrlFor(url, params), nil)
 	if err != nil {
@@ -55,7 +56,19 @@ func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Respons
 	//get.SetBasicAuth(nexus.user, nexus.password)
 	get.Header.Add("Accept", "application/json")
 
-	return http.DefaultClient.Do(get)
+	// go for it!
+	response, err := http.DefaultClient.Do(get)
+	if err != nil {
+		return nil, err
+	}
+
+	// for us, 4xx are 5xx are errors: we need to validate the response
+	if 400 <= response.StatusCode && response.StatusCode < 600 {
+		return response, &BadResponseError{Url: nexus.Url, StatusCode: response.StatusCode, Status: response.Status}
+	}
+
+	// everything alright, carry on
+	return response, err
 }
 
 func bodyToString(body io.ReadCloser) (string, error) {
@@ -63,12 +76,12 @@ func bodyToString(body io.ReadCloser) (string, error) {
 	if _, err := buf.ReadFrom(body); err != nil {
 		return "", err
 	}
-	defer body.Close()
+	defer body.Close() // don't forget to close body at the end!
 
 	return buf.String(), nil
 }
 
-// The schema for artifact searches.
+// The schema for artifact searches
 type artifactSearchResponse struct {
 	TotalCount int
 	Data       []struct {
@@ -118,7 +131,7 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 
 func (nexus *Nexus2x) GetArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
 	// This implementation is slightly tricky. As artifactSearchResponse shows, Nexus always wraps the artifacts in a
-	// GAV structure. This structure doesn't mean that within the wrapper are *all* the artifacts with that GAV, or
+	// GAV structure. This structure doesn't mean that within the wrapper are *all* the artifacts within that GAV, or
 	// that the next page won't repeat artifacts if an incomplete GAV was returned earlier.
 	//
 	// On top of that, I haven't quite figured out how Nexus is counting artifacts for paging purposes. POMs don't
@@ -127,7 +140,7 @@ func (nexus *Nexus2x) GetArtifactsWhere(filter map[string]string) ([]*Artifact, 
 
 	from := 0
 	offset := 0
-	started := false // do-while can sometimes be useful
+	started := false              // do-while can sometimes be useful
 	artifacts := newArtifactSet() // acumulates the artifacts
 
 	for offset != 0 || !started {
@@ -165,7 +178,7 @@ func (nexus *Nexus2x) GetArtifactsWhere(filter map[string]string) ([]*Artifact, 
 // Returns the first-level directories in the given repository.
 func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	// XXX Don't forget the ending /, or the response is always XML!
-	resp, err := nexus.fetch("service/local/repositories/" + repositoryId + "/content/", nil)
+	resp, err := nexus.fetch("service/local/repositories/"+repositoryId+"/content/", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -226,7 +239,7 @@ func (nexus *Nexus2x) GetArtifactsFrom(repositoryIds ...string) ([]*Artifact, er
 
 		for _, dir := range dirs {
 			// 2)
-			artifacts, err := nexus.GetArtifactsWhere(map[string]string{ "g": dir + "*", "repositoryId": repo })
+			artifacts, err := nexus.GetArtifactsWhere(map[string]string{"g": dir + "*", "repositoryId": repo})
 			if err != nil {
 				return nil, err
 			}
@@ -253,7 +266,7 @@ func (nexus *Nexus2x) hostedRepositories() ([]string, error) {
 
 	var payload *struct {
 		Data []struct {
-			Id string
+			Id       string
 			RepoType string
 		}
 	}
