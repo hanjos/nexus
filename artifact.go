@@ -25,13 +25,13 @@ func (a *Artifact) IsPom() bool {
 	return a.Classifier == "" && a.Extension == "pom"
 }
 
-// This is for the artifact set
+// this is for the artifact set
 func (a *Artifact) hash() string {
 	return a.GroupId + ":" + a.ArtifactId + ":" + a.Version + ":" + a.Extension + ":" + a.Classifier
 }
 
 // Since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.
-// Artifact's hash method is used to make the keys, since there's no Equals contract for maps to follow (like Java)
+// Artifact's hash method is used to distinguish between artifacts; there's no Java-like Equals contract to follow.
 type artifactSet struct {
 	data    []*Artifact
 	hashMap map[string]bool

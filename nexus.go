@@ -9,7 +9,8 @@ import (
 	"strings"
 )
 
-// Interfaces with a Nexus instance.
+// Accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus versions may
+// need or benefit from a specific client.
 type Client interface {
 	// Returns all artifacts hosted in this Nexus.
 	Artifacts() ([]*Artifact, error)
@@ -17,11 +18,12 @@ type Client interface {
 	// Returns all artifacts from the given repositories.
 	GetArtifactsFrom(repositoryIds ...string) ([]*Artifact, error)
 
-	// Returns all artifacts which pass the given filter.
+	// Returns all artifacts which pass the given filter. The expected keys in filter are the flags Nexus' REST API
+	// accepts, with the same semantics.
 	GetArtifactsWhere(filter map[string]string) ([]*Artifact, error)
 }
 
-// Represents a Nexus v2.x instance.
+// Represents a Nexus v2.x instance. It's the default Client implementation.
 type Nexus2x struct {
 	Url string
 }
@@ -31,7 +33,7 @@ func New(url string) Client {
 	return &Nexus2x{Url: url}
 }
 
-// builds the proper URL with parameters for GET-ing.
+// builds the proper URL with parameters for GET-ing
 func (nexus *Nexus2x) fullUrlFor(query string, filter map[string]string) string {
 	params := []string{}
 
@@ -46,14 +48,13 @@ func (nexus *Nexus2x) fullUrlFor(query string, filter map[string]string) string 
 	}
 }
 
-// does the actual legwork, going to Nexus e validating the response.
+// does the actual legwork, going to Nexus e validating the response
 func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Response, error) {
 	get, err := http.NewRequest("GET", nexus.fullUrlFor(url, params), nil)
 	if err != nil {
 		return nil, err
 	}
 
-	//get.SetBasicAuth(nexus.user, nexus.password)
 	get.Header.Add("Accept", "application/json")
 
 	// go for it!
@@ -76,12 +77,11 @@ func bodyToString(body io.ReadCloser) (string, error) {
 	if _, err := buf.ReadFrom(body); err != nil {
 		return "", err
 	}
-	defer body.Close() // don't forget to close body at the end!
+	defer body.Close() // don't forget to Close() body at the end!
 
 	return buf.String(), nil
 }
 
-// The schema for artifact searches
 type artifactSearchResponse struct {
 	TotalCount int
 	Data       []struct {
@@ -175,7 +175,7 @@ func (nexus *Nexus2x) GetArtifactsWhere(filter map[string]string) ([]*Artifact, 
 	return artifacts.data, nil
 }
 
-// Returns the first-level directories in the given repository.
+// returns the first-level directories in the given repository
 func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	// XXX Don't forget the ending /, or the response is always XML!
 	resp, err := nexus.fetch("service/local/repositories/"+repositoryId+"/content/", nil)
@@ -212,7 +212,6 @@ func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	return result, nil
 }
 
-// Returns all artifacts from the repositories with the given ids.
 func (nexus *Nexus2x) GetArtifactsFrom(repositoryIds ...string) ([]*Artifact, error) {
 	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
 	// artifacts in a given directory searching only for *. This has been disabled in the newer versions, without any
@@ -252,7 +251,7 @@ func (nexus *Nexus2x) GetArtifactsFrom(repositoryIds ...string) ([]*Artifact, er
 	return result.data, nil
 }
 
-// Returns all the hosted repositories in this Nexus.
+// returns all the hosted repositories in this Nexus
 func (nexus *Nexus2x) hostedRepositories() ([]string, error) {
 	resp, err := nexus.fetch("service/local/repositories", nil)
 	if err != nil {
@@ -286,7 +285,6 @@ func (nexus *Nexus2x) hostedRepositories() ([]string, error) {
 	return result, nil
 }
 
-// Returns all artifacts hosted in this Nexus.
 func (nexus *Nexus2x) Artifacts() ([]*Artifact, error) {
 	hosted, err := nexus.hostedRepositories()
 	if err != nil {
