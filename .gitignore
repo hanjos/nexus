@@ -30,6 +30,6 @@ _testmain.go
 *.iml
 
 # inline tests
-main.go
+cmd
 
 
