@@ -9,7 +9,7 @@ How?
 `go get` should see you through:
 
 ```sh
-go get github.com/hanjos/go-nexus/nexus
+go get github.com/hanjos/nexus
 ```
 
 And therefore `import`:
