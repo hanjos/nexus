@@ -3,6 +3,7 @@ package nexus
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -12,15 +13,7 @@ import (
 // Accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus versions may
 // need or benefit from a specific client.
 type Client interface {
-	// Returns all artifacts hosted in this Nexus.
-	Artifacts() ([]*Artifact, error)
-
-	// Returns all artifacts from the given repositories.
-	GetArtifactsFrom(repositoryIds ...string) ([]*Artifact, error)
-
-	// Returns all artifacts which pass the given filter. The expected keys in filter are the flags Nexus' REST API
-	// accepts, with the same semantics.
-	GetArtifactsWhere(filter map[string]string) ([]*Artifact, error)
+	Artifacts(criteria Criteria) ([]*Artifact, error)
 }
 
 // Represents a Nexus v2.x instance. It's the default Client implementation.
@@ -63,7 +56,7 @@ func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Respons
 		return nil, err
 	}
 
-	// for us, 4xx are 5xx are errors: we need to validate the response
+	// for us, 4xx are 5xx are errors, so we need to validate the response
 	if 400 <= response.StatusCode && response.StatusCode < 600 {
 		return response, &BadResponseError{Url: nexus.Url, StatusCode: response.StatusCode, Status: response.Status}
 	}
@@ -129,7 +122,9 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 	return artifacts
 }
 
-func (nexus *Nexus2x) GetArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
+// returns all artifacts which pass the given filter. The expected keys in filter are the flags Nexus' REST API
+// accepts, with the same semantics.
+func (nexus *Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
 	// This implementation is slightly tricky. As artifactSearchResponse shows, Nexus always wraps the artifacts in a
 	// GAV structure. This structure doesn't mean that within the wrapper are *all* the artifacts within that GAV, or
 	// that the next page won't repeat artifacts if an incomplete GAV was returned earlier.
@@ -212,84 +207,50 @@ func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	return result, nil
 }
 
-func (nexus *Nexus2x) GetArtifactsFrom(repositoryIds ...string) ([]*Artifact, error) {
+func (nexus *Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error) {
 	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
-	// artifacts in a given directory searching only for *. This has been disabled in the newer versions, without any
-	// official alternative for "give me everything you have". So, the solution adopted here is, for every given
-	// repository ID, to:
-	// 1) get the first level directories in repo
+	// artifacts in a given repository searching only for *. This has been disabled in the newer versions, without any
+	// official alternative for "give me everything you have". So, the solution adopted here is:
+	// 1) get the first level directories in repositoryId
 	// 2) for every directory 'dir', search filtering for a groupId 'dir*' and the repository ID
 	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the results in common* appear also in com*)
 	//
 	// This way I can ensure that all artifacts were found.
 
-	if len(repositoryIds) == 0 { // sanity check
-		return []*Artifact{}, nil
-	}
-
 	result := newArtifactSet()
 
-	for _, repo := range repositoryIds {
-		// 1)
-		dirs, err := nexus.firstLevelDirsOf(repo)
+	// 1)
+	dirs, err := nexus.firstLevelDirsOf(repositoryId)
+	if err != nil {
+		return nil, err
+	}
+
+	for _, dir := range dirs {
+		// 2)
+		artifacts, err := nexus.readArtifactsWhere(map[string]string{"g": dir + "*", "repositoryId": repositoryId})
 		if err != nil {
 			return nil, err
 		}
 
-		for _, dir := range dirs {
-			// 2)
-			artifacts, err := nexus.GetArtifactsWhere(map[string]string{"g": dir + "*", "repositoryId": repo})
-			if err != nil {
-				return nil, err
-			}
-
-			// 3)
-			result.add(artifacts)
-		}
+		// 3)
+		result.add(artifacts)
 	}
 
 	return result.data, nil
 }
 
-// returns all the hosted repositories in this Nexus
-func (nexus *Nexus2x) hostedRepositories() ([]string, error) {
-	resp, err := nexus.fetch("service/local/repositories", nil)
-	if err != nil {
-		return nil, err
+func (nexus *Nexus2x) Artifacts(criteria Criteria) ([]*Artifact, error) {
+	params := criteria.Parameters()
+
+	if len(params) == 0 {
+		return nil, fmt.Errorf("Full search isn't supported!")
 	}
 
-	body, err := bodyToString(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	var payload *struct {
-		Data []struct {
-			Id       string
-			RepoType string
+	if len(params) == 1 {
+		if repoId, ok := params["repositoryId"]; ok {
+			return nexus.readArtifactsFrom(repoId)
 		}
 	}
 
-	err = json.Unmarshal([]byte(body), &payload)
-	if err != nil {
-		return nil, err
-	}
-
-	result := []string{}
-	for _, repo := range payload.Data {
-		if repo.RepoType == "hosted" {
-			result = append(result, repo.Id)
-		}
-	}
-
-	return result, nil
-}
-
-func (nexus *Nexus2x) Artifacts() ([]*Artifact, error) {
-	hosted, err := nexus.hostedRepositories()
-	if err != nil {
-		return nil, err
-	}
-
-	return nexus.GetArtifactsFrom(hosted...)
+	return nexus.readArtifactsWhere(params)
 }

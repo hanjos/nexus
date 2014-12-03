@@ -26,7 +26,7 @@ import (
 func main() {
   n := nexus.New("http://nexus.somewhere.com")
   
-  artifacts, err := n.Artifacts()
+  artifacts, err := n.Artifacts(nexus.InRepository{ nexus.ByKeyword("com.sbrubbles*"), "shamalamadingdong" })
   if err != nil {
     fmt.Printf("%v: %v", reflect.TypeOf(err), err)
   }
@@ -48,4 +48,4 @@ And it was a good excuse to try Go out :)
 LICENSE
 =======
 
-MIT License. See [LICENSE](https://github.com/hanjos/go-nexus/blob/master/LICENSE) for the gory details.
+MIT License. See [LICENSE](https://github.com/hanjos/nexus/blob/master/LICENSE) for the gory details.
