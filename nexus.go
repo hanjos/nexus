@@ -69,14 +69,14 @@ func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Respons
 	return response, err
 }
 
-func bodyToString(body io.ReadCloser) (string, error) {
+func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	buf := new(bytes.Buffer)
 	if _, err := buf.ReadFrom(body); err != nil {
-		return "", err
+		return nil, err
 	}
 	defer body.Close() // don't forget to Close() body at the end!
 
-	return buf.String(), nil
+	return buf.Bytes(), nil
 }
 
 // Artifacts
@@ -96,10 +96,10 @@ type artifactSearchResponse struct {
 	}
 }
 
-func extractArtifactPayloadFrom(body string) (*artifactSearchResponse, error) {
+func extractArtifactPayloadFrom(body []byte) (*artifactSearchResponse, error) {
 	var payload *artifactSearchResponse
 
-	err := json.Unmarshal([]byte(body), &payload)
+	err := json.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (nexus *Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact,
 			return nil, err
 		}
 
-		body, err := bodyToString(resp.Body)
+		body, err := bodyToBytes(resp.Body)
 		if err != nil {
 			return nil, err
 		}
@@ -185,7 +185,7 @@ func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	}
 
 	// fill payload with the given response
-	body, err := bodyToString(resp.Body)
+	body, err := bodyToBytes(resp.Body)
 	if err != nil {
 		return nil, err
 	}
@@ -274,10 +274,10 @@ type repoSearchResponse struct {
 	}
 }
 
-func extractRepoPayloadFrom(body string) (*repoSearchResponse, error) {
+func extractRepoPayloadFrom(body []byte) (*repoSearchResponse, error) {
 	var payload *repoSearchResponse
 
-	err := json.Unmarshal([]byte(body), &payload)
+	err := json.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -310,7 +310,7 @@ func (nexus *Nexus2x) Repositories() ([]*Repository, error) {
 		return nil, err
 	}
 
-	body, err := bodyToString(resp.Body)
+	body, err := bodyToBytes(resp.Body)
 	if err != nil {
 		return nil, err
 	}
