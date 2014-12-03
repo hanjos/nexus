@@ -13,7 +13,11 @@ import (
 // Accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus versions may
 // need or benefit from a specific client.
 type Client interface {
+	// Returns all artifacts in this Nexus which satisfy the given criteria.
 	Artifacts(criteria Criteria) ([]*Artifact, error)
+
+	// Returns all repositories in this Nexus.
+	Repositories() ([]*Repository, error)
 }
 
 // Represents a Nexus v2.x instance. It's the default Client implementation.
@@ -74,6 +78,8 @@ func bodyToString(body io.ReadCloser) (string, error) {
 
 	return buf.String(), nil
 }
+
+// Artifacts
 
 type artifactSearchResponse struct {
 	TotalCount int
@@ -253,4 +259,66 @@ func (nexus *Nexus2x) Artifacts(criteria Criteria) ([]*Artifact, error) {
 	}
 
 	return nexus.readArtifactsWhere(params)
+}
+
+// Repositories
+
+type repoSearchResponse struct {
+	Data []struct {
+		Id         string
+		Name       string
+		RepoType   string
+		RepoPolicy string
+		Format     string
+		RemoteUri  string
+	}
+}
+
+func extractRepoPayloadFrom(body string) (*repoSearchResponse, error) {
+	var payload *repoSearchResponse
+
+	err := json.Unmarshal([]byte(body), &payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+}
+
+func extractReposFrom(payload *repoSearchResponse) []*Repository {
+	result := []*Repository{}
+
+	for _, repo := range payload.Data {
+		newRepo := &Repository{
+			Id:        repo.Id,
+			Name:      repo.Name,
+			Type:      repo.RepoType,
+			Format:    repo.Format,
+			Policy:    repo.RepoPolicy,
+			RemoteURI: repo.RemoteUri,
+		}
+
+		result = append(result, newRepo)
+	}
+
+	return result
+}
+
+func (nexus *Nexus2x) Repositories() ([]*Repository, error) {
+	resp, err := nexus.fetch("service/local/repositories", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := bodyToString(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := extractRepoPayloadFrom(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractReposFrom(payload), nil
 }
