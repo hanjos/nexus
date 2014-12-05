@@ -136,8 +136,9 @@ func (nexus *Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact,
 	// that the next page won't repeat artifacts if an incomplete GAV was returned earlier.
 	//
 	// On top of that, I haven't quite figured out how Nexus is counting artifacts for paging purposes. POMs don't
-	// seem to count as artifacts, except when the project has a 'pom' packaging (which I can't know without opening
-	// every POM), but the math still doesn't quite come together. So I adopted a conservative estimate.
+	// seem to count as artifacts, except when the project has a 'pom' packaging (which I can't know for sure without
+	// GET-ing every POM), but the math still doesn't quite come together. So I took a conservative approach, which
+	// forces a sequential algorithm. This search can be parallelized if the paging problem is solved.
 
 	from := 0
 	offset := 0
@@ -215,13 +216,11 @@ func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 
 func (nexus *Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error) {
 	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
-	// artifacts in a given repository searching only for *. This has been disabled in the newer versions, without any
+	// artifacts in a given repository by searching for *. This has been disabled in the newer versions, without any
 	// official alternative for "give me everything you have". So, the solution adopted here is:
 	// 1) get the first level directories in repositoryId
-	// 2) for every directory 'dir', search filtering for a groupId 'dir*' and the repository ID
+	// 2) for every directory 'dir', do a search filtering for the groupId 'dir*' and the repository ID
 	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the results in common* appear also in com*)
-	//
-	// This way I can ensure that all artifacts were found.
 
 	result := newArtifactSet()
 
@@ -245,6 +244,7 @@ func (nexus *Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error
 	return result.data, nil
 }
 
+// Errors out on a full search (n.Artifacts(CriteriaEmpty)).
 func (nexus *Nexus2x) Artifacts(criteria Criteria) ([]*Artifact, error) {
 	params := criteria.Parameters()
 
