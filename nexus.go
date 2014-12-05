@@ -230,15 +230,29 @@ func (nexus *Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error
 		return nil, err
 	}
 
+	// 2) these searches can be done concurrently :)
+	artifacts := make(chan []*Artifact)
+	errors := make(chan error)
 	for _, dir := range dirs {
-		// 2)
-		artifacts, err := nexus.readArtifactsWhere(map[string]string{"g": dir + "*", "repositoryId": repositoryId})
-		if err != nil {
+		go func(dir string) {
+			a, err := nexus.readArtifactsWhere(map[string]string{"g": dir + "*", "repositoryId": repositoryId})
+			if err != nil {
+				errors <- err
+				return
+			}
+
+			artifacts <- a
+		}(dir)
+	}
+
+	// 3)
+	for i := 0; i < len(dirs); i++ {
+		select {
+		case a := <-artifacts:
+			result.add(a)
+		case err := <-errors:
 			return nil, err
 		}
-
-		// 3)
-		result.add(artifacts)
 	}
 
 	return result.data, nil
