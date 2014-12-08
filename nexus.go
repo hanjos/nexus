@@ -9,9 +9,10 @@ import (
 	"fmt"
 	"io"
 	"net/http"
-	"nexus/search"
 	"strconv"
 	"strings"
+
+	"github.com/hanjos/nexus/search"
 )
 
 // Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus

@@ -1,5 +1,7 @@
 A Go library to pull data from a [Sonatype Nexus](http://www.sonatype.com/nexus) instance.
 
+[![GoDoc](https://godoc.org/github.com/hanjos/nexus?status.svg)](https://godoc.org/github.com/hanjos/nexus)
+
 How?
 ----
 
