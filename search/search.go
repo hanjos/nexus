@@ -67,7 +67,7 @@ func (sha1 ByChecksum) Parameters() map[string]string {
 	}
 }
 
-// Searches all artifacts in the given repository ID.
+// Searches for all artifacts in the given repository ID.
 type ByRepository string
 
 func (byRepo ByRepository) Parameters() map[string]string {
