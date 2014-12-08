@@ -1,6 +1,6 @@
 /*
- Package credentials provides code to provide an http.Request with a set of credentials. Some API calls can only be
- done by users with the proper authorization, so a nexus.Client must have some way of providing it.
+ Package credentials provides an http.Request with a set of credentials. Some Nexus API calls can only be done by users
+ with the proper authorization.
 */
 package credentials
 
@@ -15,6 +15,7 @@ type Credentials interface {
 // None is the zero value for Credentials. It removes Authorization data from the header.
 const None = noCredentials(false)
 
+// bool trick for Go to allow a const
 type noCredentials bool
 
 func (auth noCredentials) Sign(request *http.Request) {
