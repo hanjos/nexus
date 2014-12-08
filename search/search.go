@@ -4,22 +4,22 @@
 */
 package search
 
-// Criteria compiles to a single map with the parameters to give Nexus. So it only supports queries which can be made
+// Criteria compiles to a single map with the parameters Nexus expects. So it only supports queries which can be made
 // in a single API call.
 type Criteria interface {
 	Parameters() map[string]string
 }
 
-// The zero value for criteria. There's no reason for more than one value to exist, so it's unexported and
+// There's no reason for more than one value to exist, so it's unexported and
 // made bool for Go to allow a const.
-type zeroCriteria bool
+type noCriteria bool
 
-func (empty zeroCriteria) Parameters() map[string]string {
+func (empty noCriteria) Parameters() map[string]string {
 	return map[string]string{}
 }
 
-// The zero value for criteria. Its Parameters() method returns an empty map.
-const CriteriaZero = zeroCriteria(false)
+// None is the zero value for Criteria. It returns an empty map.
+const None = noCriteria(false)
 
 // Searches by Maven coordinates.
 type ByCoordinates struct {

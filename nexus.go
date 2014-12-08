@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
 )
 
@@ -23,17 +24,22 @@ type Client interface {
 
 	// Returns all repositories in this Nexus.
 	Repositories() ([]*Repository, error)
+
+	// Returns a Client which uses the given credentials to access this Nexus, without modifying the original client.
+	// nil is understood to mean credentials.None.
+	As(credentials credentials.Credentials) Client
 }
 
 // Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
 type Nexus2x struct {
 	Url string // e.g. http://nexus.somewhere.com:8080/nexus
+
+	credentials.Credentials // e.g. BasicAuth{"username", "password"}
 }
 
-// New creates a new Nexus client, using the default Client implementation. url is something like
-// http://host:port/nexus.
-func New(url string) Client {
-	return &Nexus2x{Url: url}
+// New creates a new Nexus client, using the default Client implementation.
+func New(url string, c credentials.Credentials) Client {
+	return &Nexus2x{Url: url, Credentials: credentials.OrZero(c)}
 }
 
 // builds the proper URL with parameters for GET-ing.
@@ -58,6 +64,7 @@ func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Respons
 		return nil, err
 	}
 
+	nexus.Credentials.Sign(get)
 	get.Header.Add("Accept", "application/json")
 
 	// go for it!
@@ -85,10 +92,14 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Artifacts
+// As returns a copy of this client which uses the given credentials to access the same Nexus instance. Nil is
+// understood to mean credentials.None.
+func (nexus *Nexus2x) As(c credentials.Credentials) Client {
+	return &Nexus2x{Url: nexus.Url, Credentials: credentials.OrZero(c)}
+}
 
 // Artifacts returns all artifacts in this Nexus which satisfy the given criteria. This implementation errors out on a
-// full search (n.Artifacts(search.CriteriaZero)).
+// full search (n.Artifacts(search.None)).
 func (nexus *Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := criteria.Parameters()
 
