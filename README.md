@@ -19,12 +19,13 @@ package main
 import (
   "fmt"
   "github.com/hanjos/nexus"
+  "github.com/hanjos/nexus/credentials"
   "github.com/hanjos/nexus/search"
   "reflect"
 )
 
 func main() {
-  n := nexus.New("http://nexus.somewhere.com")
+  n := nexus.New("http://nexus.somewhere.com", credentials.BasicAuth{"username", "password"})
   
   artifacts, err := n.Artifacts(
     search.InRepository{ 
