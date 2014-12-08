@@ -1,3 +1,6 @@
+// Package nexus is a client for Go code to pull data from a Sonatype Nexus instance. Nexus provides a REST API,
+// although some information may require several calls to collate all the data. So this client provides some methods
+// to abstract away the necessary plumbing.
 package nexus
 
 import (
@@ -10,8 +13,8 @@ import (
 	"strings"
 )
 
-// Accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus versions may
-// need or benefit from a specific client.
+// Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
+// versions may need or benefit from a specific client.
 type Client interface {
 	// Returns all artifacts in this Nexus which satisfy the given criteria.
 	Artifacts(criteria Criteria) ([]*Artifact, error)
@@ -20,17 +23,18 @@ type Client interface {
 	Repositories() ([]*Repository, error)
 }
 
-// Represents a Nexus v2.x instance. It's the default Client implementation.
+// Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
 type Nexus2x struct {
-	Url string
+	Url string // e.g. http://nexus.somewhere.com:8080/nexus
 }
 
-// Creates a new Nexus client, using the default Client implementation.
+// New creates a new Nexus client, using the default Client implementation. url is something like
+// http://host:port/nexus.
 func New(url string) Client {
 	return &Nexus2x{Url: url}
 }
 
-// builds the proper URL with parameters for GET-ing
+// builds the proper URL with parameters for GET-ing.
 func (nexus *Nexus2x) fullUrlFor(query string, filter map[string]string) string {
 	params := []string{}
 
@@ -45,7 +49,7 @@ func (nexus *Nexus2x) fullUrlFor(query string, filter map[string]string) string 
 	}
 }
 
-// does the actual legwork, going to Nexus e validating the response
+// does the actual legwork, going to Nexus and validating the response.
 func (nexus *Nexus2x) fetch(url string, params map[string]string) (*http.Response, error) {
 	get, err := http.NewRequest("GET", nexus.fullUrlFor(url, params), nil)
 	if err != nil {
@@ -80,6 +84,24 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 }
 
 // Artifacts
+
+// Artifacts returns all artifacts in this Nexus which satisfy the given criteria. This implementation errors out on a
+// full search (n.Artifacts(CriteriaZero)).
+func (nexus *Nexus2x) Artifacts(criteria Criteria) ([]*Artifact, error) {
+	params := criteria.Parameters()
+
+	if len(params) == 0 {
+		return nil, fmt.Errorf("Full search isn't supported!")
+	}
+
+	if len(params) == 1 {
+		if repoId, ok := params["repositoryId"]; ok {
+			return nexus.readArtifactsFrom(repoId)
+		}
+	}
+
+	return nexus.readArtifactsWhere(params)
+}
 
 type artifactSearchResponse struct {
 	TotalCount int
@@ -128,8 +150,8 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 	return artifacts
 }
 
-// returns all artifacts which pass the given filter. The expected keys in filter are the flags Nexus' REST API
-// accepts, with the same semantics.
+// returns all artifacts in this Nexus which pass the given filter. The expected keys in filter are the flags Nexus'
+// REST API accepts, with the same semantics.
 func (nexus *Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
 	// This implementation is slightly tricky. As artifactSearchResponse shows, Nexus always wraps the artifacts in a
 	// GAV structure. This structure doesn't mean that within the wrapper are *all* the artifacts within that GAV, or
@@ -177,7 +199,7 @@ func (nexus *Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact,
 	return artifacts.data, nil
 }
 
-// returns the first-level directories in the given repository
+// returns the first-level directories in the given repository.
 func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	// XXX Don't forget the ending /, or the response is always XML!
 	resp, err := nexus.fetch("service/local/repositories/"+repositoryId+"/content/", nil)
@@ -212,8 +234,10 @@ func (nexus *Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 	}
 
 	return result, nil
+
 }
 
+// returns all artifacts in the given repository.
 func (nexus *Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error) {
 	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
 	// artifacts in a given repository by searching for *. This has been disabled in the newer versions, without any
@@ -258,24 +282,27 @@ func (nexus *Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error
 	return result.data, nil
 }
 
-// Errors out on a full search (n.Artifacts(CriteriaEmpty)).
-func (nexus *Nexus2x) Artifacts(criteria Criteria) ([]*Artifact, error) {
-	params := criteria.Parameters()
-
-	if len(params) == 0 {
-		return nil, fmt.Errorf("Full search isn't supported!")
-	}
-
-	if len(params) == 1 {
-		if repoId, ok := params["repositoryId"]; ok {
-			return nexus.readArtifactsFrom(repoId)
-		}
-	}
-
-	return nexus.readArtifactsWhere(params)
-}
-
 // Repositories
+
+// Repositories returns all repositories in this Nexus.
+func (nexus *Nexus2x) Repositories() ([]*Repository, error) {
+	resp, err := nexus.fetch("service/local/repositories", nil)
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := bodyToBytes(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := extractRepoPayloadFrom(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractReposFrom(payload), nil
+}
 
 type repoSearchResponse struct {
 	Data []struct {
@@ -316,23 +343,4 @@ func extractReposFrom(payload *repoSearchResponse) []*Repository {
 	}
 
 	return result
-}
-
-func (nexus *Nexus2x) Repositories() ([]*Repository, error) {
-	resp, err := nexus.fetch("service/local/repositories", nil)
-	if err != nil {
-		return nil, err
-	}
-
-	body, err := bodyToBytes(resp.Body)
-	if err != nil {
-		return nil, err
-	}
-
-	payload, err := extractRepoPayloadFrom(body)
-	if err != nil {
-		return nil, err
-	}
-
-	return extractReposFrom(payload), nil
 }

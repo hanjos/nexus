@@ -1,10 +1,7 @@
 package nexus
 
-/*
- Nexus' API supports 4 different types of searches, but in the end, all we need is a map holding the parameters to pass
- along. Criteria enables a mini-DSL for nexus.Client.Artifacts(). The types and functions here cover the basics, but
- anything satisfying Criteria can be used.
-*/
+// Criteria enables a mini-DSL for nexus.Client.Artifacts(). Nexus' API supports 4 different types of searches, but in
+// the end, all we need is a map holding the parameters to pass along.
 type Criteria interface {
 	Parameters() map[string]string
 }
@@ -75,11 +72,11 @@ func (byRepo ByRepository) Parameters() map[string]string {
 	}
 }
 
-// Searches for all artifacts following the given criteria in the given repository ID.
+// Searches for all artifacts in the given repository ID following the given criteria.
 type InRepository struct {
-	Criteria
-
 	RepositoryId string
+
+	Criteria
 }
 
 func (inRepo InRepository) Parameters() map[string]string {

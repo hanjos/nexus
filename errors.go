@@ -2,7 +2,7 @@ package nexus
 
 import "fmt"
 
-// Error (trying to) access Nexus.
+// BadResponseError is returned when there's an error on an attempt to access Nexus.
 type BadResponseError struct {
 	Url        string // e.g. http://nexus.somewhere.com
 	StatusCode int    // e.g. 400

@@ -1,4 +1,4 @@
-This is a Go library to pull data from a [Sonatype Nexus](http://www.sonatype.com/nexus) instance.
+A Go library to pull data from a [Sonatype Nexus](http://www.sonatype.com/nexus) instance.
 
 How?
 ----
@@ -25,8 +25,8 @@ func main() {
   
   artifacts, err := n.Artifacts(
     nexus.InRepository{ 
-      nexus.ByKeyword("com.sbrubbles*"), 
-      "shamalamadingdong" })
+      "shamalamadingdong" 
+      nexus.ByKeyword("com.sbrubbles*")})
   
   if err != nil {
     fmt.Printf("%v: %v", reflect.TypeOf(err), err)

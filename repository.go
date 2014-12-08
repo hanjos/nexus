@@ -10,6 +10,7 @@ type Repository struct {
 	RemoteURI string
 }
 
+// String returns a pleasant but informative string representation of repo.
 func (repo Repository) String() string {
 	var uri string
 	if repo.RemoteURI != "" {
