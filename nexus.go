@@ -9,6 +9,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"nexus/search"
 	"strconv"
 	"strings"
 )
@@ -17,7 +18,7 @@ import (
 // versions may need or benefit from a specific client.
 type Client interface {
 	// Returns all artifacts in this Nexus which satisfy the given criteria.
-	Artifacts(criteria Criteria) ([]*Artifact, error)
+	Artifacts(criteria search.Criteria) ([]*Artifact, error)
 
 	// Returns all repositories in this Nexus.
 	Repositories() ([]*Repository, error)
@@ -86,8 +87,8 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 // Artifacts
 
 // Artifacts returns all artifacts in this Nexus which satisfy the given criteria. This implementation errors out on a
-// full search (n.Artifacts(CriteriaZero)).
-func (nexus *Nexus2x) Artifacts(criteria Criteria) ([]*Artifact, error) {
+// full search (n.Artifacts(search.CriteriaZero)).
+func (nexus *Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := criteria.Parameters()
 
 	if len(params) == 0 {

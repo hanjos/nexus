@@ -17,6 +17,7 @@ package main
 import (
   "fmt"
   "github.com/hanjos/nexus"
+  "github.com/hanjos/nexus/search"
   "reflect"
 )
 
@@ -24,9 +25,9 @@ func main() {
   n := nexus.New("http://nexus.somewhere.com")
   
   artifacts, err := n.Artifacts(
-    nexus.InRepository{ 
+    search.InRepository{ 
       "shamalamadingdong" 
-      nexus.ByKeyword("com.sbrubbles*")})
+      search.ByKeyword("com.sbrubbles*")})
   
   if err != nil {
     fmt.Printf("%v: %v", reflect.TypeOf(err), err)

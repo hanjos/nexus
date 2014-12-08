@@ -1,7 +1,11 @@
-package nexus
+/*
+ Package search provides a mini-DSL for nexus.Client.Artifacts(). Nexus' API supports 4 different types of searches,
+ but in the end, all we need is a map holding the parameters to pass along.
+*/
+package search
 
-// Criteria enables a mini-DSL for nexus.Client.Artifacts(). Nexus' API supports 4 different types of searches, but in
-// the end, all we need is a map holding the parameters to pass along.
+// Criteria compiles to a single map with the parameters to give Nexus. So it only supports queries which can be made
+// in a single API call.
 type Criteria interface {
 	Parameters() map[string]string
 }
