@@ -31,19 +31,24 @@ func ExampleNexus2x_Artifacts() {
 	artifacts, err := n.Artifacts(search.ByClassname("javax.servlet.Servlet"))
 
 	// using a composite search
-	artifacts, err := n.Artifacts(search.InRepository{"releases", search.ByKeyword("javax.enterprise")})
+	artifacts, err := n.Artifacts(
+		search.InRepository{
+			"releases",
+			search.ByKeyword("javax.enterprise")})
 }
 
-func ExampleNexus2x_Artifacts_fullsearch() {
+func ExampleNexus2x_Artifacts_everything() {
 	n := nexus.New("http://maven.java.net", credentials.None)
 
 	// returns an error
 	artifacts, err := n.Artifacts(search.None)
 
-	// if you want all artifacts in this Nexus, you can search in each repository one by one. Generally you don't want
-	// to do that, especially if you have proxy repositories; central has, at the time of this comment, over 800,000
-	// artifacts (!), which in this implementation will be all loaded into memory (!!). But, if you insist, the easiest
-	// way to do it is:
+	// if you want all artifacts in this Nexus, you can search in each
+	// repository one by one. Generally you don't want to do that, especially
+	// if you have proxy repositories; central has, at the time of this
+	// comment, over 800,000 artifacts (!), which in this implementation will
+	// be all loaded into memory (!!). But, if you insist, the easiest way to
+	// do it is:
 
 	// 1) get all repositories
 	repositories, err := n.Repositories()
