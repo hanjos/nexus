@@ -31,11 +31,12 @@ type Nexus2x struct {
 	Url string // e.g. http://nexus.somewhere.com:8080/nexus
 
 	credentials.Credentials // e.g. credentials.BasicAuth{"username", "password"}
+	HttpClient *http.Client // the network client
 }
 
 // New creates a new Nexus client, using the default Client implementation.
 func New(url string, c credentials.Credentials) Client {
-	return &Nexus2x{Url: url, Credentials: credentials.OrZero(c)}
+	return &Nexus2x{Url: url, Credentials: credentials.OrZero(c), HttpClient: &http.Client{}}
 }
 
 // builds the proper URL with parameters for GET-ing.
@@ -64,7 +65,7 @@ func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response
 	get.Header.Add("Accept", "application/json")
 
 	// go for it!
-	response, err := http.DefaultClient.Do(get)
+	response, err := nexus.HttpClient.Do(get)
 	if err != nil {
 		return nil, err
 	}
