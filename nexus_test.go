@@ -34,7 +34,7 @@ func ExampleNexus2x_Artifacts() {
 	artifacts, err := n.Artifacts(search.InRepository{"releases", search.ByKeyword("javax.enterprise")})
 }
 
-func ExampleNexus2x_Artifacts_full_search() {
+func ExampleNexus2x_Artifacts_fullsearch() {
 	n := nexus.New("http://maven.java.net", credentials.None)
 
 	// returns an error
