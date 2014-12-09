@@ -1,3 +1,4 @@
+// Package errors defines specific errors for this application.
 package errors
 
 import (
@@ -18,7 +19,7 @@ func (err BadResponseError) Error() string {
 
 // UnauthorizedError is returned when the given credentials aren't authorized to reach the given URL.
 type UnauthorizedError struct {
-	Url        string // e.g. http://nexus.somewhere.com
+	Url         string                  // e.g. http://nexus.somewhere.com
 	Credentials credentials.Credentials // e.g. credentials.BasicAuth{"username", "password"}
 }
 
