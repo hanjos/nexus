@@ -24,7 +24,7 @@ func Example() {
 	}
 }
 
-func ExampleNexus2x_Artifacts_simple() {
+func ExampleNexus2x_Artifacts() {
 	n := nexus.New("http://maven.java.net", credentials.None)
 
 	// using a simple search
