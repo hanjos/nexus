@@ -12,14 +12,19 @@ type Credentials interface {
 	Sign(request *http.Request)
 }
 
-// None is the zero value for Credentials. It removes Authorization data from the header.
+// None is the zero value for Credentials.
 const None = noCredentials(false)
 
 // bool trick for Go to allow a const
 type noCredentials bool
 
+// Sign removes Authorization data from the header.
 func (auth noCredentials) Sign(request *http.Request) {
 	request.Header.Del("Authorization")
+}
+
+func (auth noCredentials) String() string {
+	return "No credentials"
 }
 
 // OrZero returns the given credentials untouched if it's not nil, and credentials.None otherwise. Useful for when one
@@ -40,4 +45,8 @@ type BasicAuth struct {
 
 func (auth BasicAuth) Sign(request *http.Request) {
 	request.SetBasicAuth(auth.Username, auth.Password)
+}
+
+func (auth BasicAuth) String() string {
+	return "BasicAuth{" + auth.Username + ", ***}"
 }
