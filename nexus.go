@@ -13,8 +13,8 @@ import (
 	"strings"
 
 	"github.com/hanjos/nexus/credentials"
-	"github.com/hanjos/nexus/search"
 	"github.com/hanjos/nexus/errors"
+	"github.com/hanjos/nexus/search"
 )
 
 // Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
@@ -29,10 +29,9 @@ type Client interface {
 
 // Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
 type Nexus2x struct {
-	Url string // e.g. http://nexus.somewhere.com:8080/nexus
-
-	credentials.Credentials // e.g. credentials.BasicAuth{"username", "password"}
-	HttpClient *http.Client // the network client
+	Url         string                  // e.g. http://nexus.somewhere.com:8080/nexus
+	Credentials credentials.Credentials // e.g. credentials.BasicAuth{"username", "password"}
+	HttpClient  *http.Client            // the network client
 }
 
 // New creates a new Nexus client, using the default Client implementation.
