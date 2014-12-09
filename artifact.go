@@ -13,7 +13,7 @@ type Artifact struct {
 
 // String returns the string representation of an artifact, as per Maven docs
 // (http://maven.apache.org/pom.html#Maven_Coordinates).
-func (a *Artifact) String() string {
+func (a Artifact) String() string {
 	var parts = []string{a.GroupId, a.ArtifactId, a.Extension}
 
 	if a.Classifier != "" {
