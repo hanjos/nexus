@@ -14,6 +14,7 @@ import (
 
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
+	"github.com/hanjos/nexus/errors"
 )
 
 // Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
@@ -56,7 +57,8 @@ func (nexus Nexus2x) fullUrlFor(query string, filter map[string]string) string {
 
 // does the actual legwork, going to Nexus and validating the response.
 func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response, error) {
-	get, err := http.NewRequest("GET", nexus.fullUrlFor(url, params), nil)
+	fullUrl := nexus.fullUrlFor(url, params)
+	get, err := http.NewRequest("GET", fullUrl, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -70,13 +72,19 @@ func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response
 		return nil, err
 	}
 
-	// for us, 4xx are 5xx are errors, so we need to validate the response
-	if 400 <= response.StatusCode && response.StatusCode < 600 {
-		return response, &BadResponseError{Url: nexus.Url, StatusCode: response.StatusCode, Status: response.Status}
+	// lets see if everything is alright
+	status := response.StatusCode
+	switch true {
+	case status == http.StatusUnauthorized:
+		// the credentials don't check out
+		return nil, &errors.UnauthorizedError{nexus.fullUrlFor(url, params), nexus.Credentials}
+	case 400 <= status && status < 600:
+		// Nexus complained, so error out
+		return nil, &errors.BadResponseError{nexus.Url, status, response.Status}
 	}
 
-	// everything alright, carry on
-	return response, err
+	// yup, all is good, carry on
+	return response, nil
 }
 
 func bodyToBytes(body io.ReadCloser) ([]byte, error) {
