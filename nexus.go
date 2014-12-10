@@ -19,7 +19,8 @@ import (
 // Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
 // versions may need or benefit from a specific client.
 type Client interface {
-	// Returns all artifacts in this Nexus which satisfy the given criteria.
+	// Returns all artifacts in this Nexus which satisfy the given criteria. Nil is the same as search.None. If no
+	// criteria are given (e.g. search.None), it does a full search in all repositories in this Nexus.
 	Artifacts(criteria search.Criteria) ([]*Artifact, error)
 
 	// Returns all repositories in this Nexus.
