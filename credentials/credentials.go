@@ -13,7 +13,7 @@ type Credentials interface {
 }
 
 // None is the zero value for Credentials.
-const None = noCredentials(false)
+const None = noCredentials(true)
 
 // bool trick for Go to allow a const
 type noCredentials bool
