@@ -19,7 +19,7 @@ func Example() {
 	}
 
 	// printing out all artifacts which are in a hosted repository, and have
-	// in their groupId 'javax.enterprise' and a 'pom' packaging.
+	// in their groupId 'javax.enterprise' and a 'sources' classifier.
 	for _, repo := range repositories {
 		if repo.Type != "hosted" {
 			continue
