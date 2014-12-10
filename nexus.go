@@ -6,7 +6,6 @@ package nexus
 import (
 	"bytes"
 	"encoding/json"
-	"fmt"
 	"io"
 	"net/http"
 	"strconv"
@@ -82,7 +81,7 @@ func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response
 		return nil, &errors.BadResponseError{nexus.Url, status, response.Status}
 	}
 
-	// yup, all is good, carry on
+	// all is good, carry on
 	return response, nil
 }
 
@@ -96,17 +95,52 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Artifacts returns all artifacts in this Nexus which satisfy the given criteria. This implementation errors out on a
-// full search (n.Artifacts(search.None)).
+// Artifacts returns all artifacts in this Nexus which satisfy the given criteria. Nil is the same as search.None.
+// If no criteria are given (e.g. search.None), it does a full search in all repositories in this Nexus. Generally you
+// don't want that, especially if you have proxy repositories; Maven Central has, at the time of this comment, over
+// 800,000 artifacts (!), which in this implementation will be all loaded into memory (!!). But, if you insist...
 func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
-	params := criteria.Parameters()
+	params := search.OrZero(criteria).Parameters()
 
-	if len(params) == 0 {
-		return nil, fmt.Errorf("Full search isn't supported!")
+	if len(params) == 0 { // full search
+		// there's no easy way to do this, so here we go:
+		// 1) get the repos
+		repos, err := nexus.Repositories()
+		if err != nil {
+			return nil, err
+		}
+
+		// 2) search for the artifacts in each repo
+		artifacts := make(chan []*Artifact)
+		errors := make(chan error)
+		for _, repo := range repos {
+			go func(repo string) {
+				a, err := nexus.readArtifactsFrom(repo)
+				if err != nil {
+					errors <- err
+					return
+				}
+
+				artifacts <- a
+			}(repo.Id)
+		}
+
+		// 3) pile 'em up
+		result := newArtifactSet()
+		for i := 0; i < len(repos); i++ {
+			select {
+			case a := <-artifacts:
+				result.add(a)
+			case err := <-errors:
+				return nil, err
+			}
+		}
+
+		return result.data, err
 	}
 
 	if len(params) == 1 {
-		if repoId, ok := params["repositoryId"]; ok {
+		if repoId, ok := params["repositoryId"]; ok { // all in repo search
 			return nexus.readArtifactsFrom(repoId)
 		}
 	}
