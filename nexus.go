@@ -19,8 +19,9 @@ import (
 // Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
 // versions may need or benefit from a specific client.
 type Client interface {
-	// Returns all artifacts in this Nexus which satisfy the given criteria. Nil is the same as search.None. If no
-	// criteria are given (e.g. search.None), it does a full search in all repositories in this Nexus.
+	// Returns all artifacts in this Nexus which satisfy the given criteria.
+	// Nil is the same as search.None. If no criteria are given
+	// (e.g. search.None), it does a full search in all repositories.
 	Artifacts(criteria search.Criteria) ([]*Artifact, error)
 
 	// Returns all repositories in this Nexus.
@@ -97,9 +98,9 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 }
 
 // Artifacts returns all artifacts in this Nexus which satisfy the given criteria. Nil is the same as search.None.
-// If no criteria are given (e.g. search.None), it does a full search in all repositories in this Nexus. Generally you
-// don't want that, especially if you have proxy repositories; Maven Central has, at the time of this comment, over
-// 800,000 artifacts (!), which in this implementation will be all loaded into memory (!!). But, if you insist...
+// If no criteria are given (e.g. search.None), it does a full search in all repositories. Generally you don't want
+// that, especially if you have proxy repositories; Maven Central has, at the time of this comment, over 800,000
+// artifacts (!), which in this implementation will be all loaded into memory (!!). But, if you insist...
 func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := search.OrZero(criteria).Parameters()
 

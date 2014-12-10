@@ -1,13 +1,14 @@
 package nexus
 
-// A Nexus repository. Nexus actually provides a bit more data, but this should be enough for most uses.
+// A Nexus repository. Nexus actually provides a bit more data, but this should be enough for most uses. Groups aren't
+// considered repositories by Nexus' API; there's a separate call for them.
 type Repository struct {
-	Id        string
-	Name      string
-	Type      string
-	Format    string
-	Policy    string
-	RemoteURI string
+	Id        string // e.g. releases
+	Name      string // e.g. Releases
+	Type      string // e.g. hosted, proxy, virtual...
+	Format    string // e.g. maven2, maven1...
+	Policy    string // e.g. RELEASE, SNAPSHOT
+	RemoteURI string // e.g. http://repo1.maven.org/maven2/
 }
 
 // String returns a pleasant but informative string representation of repo.

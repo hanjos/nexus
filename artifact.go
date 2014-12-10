@@ -4,11 +4,11 @@ import "strings"
 
 // Artifact is a Maven coordinate to a single artifact.
 type Artifact struct {
-	GroupId    string
-	ArtifactId string
-	Version    string
-	Classifier string
-	Extension  string
+	GroupId    string // e.g. org.springframework
+	ArtifactId string // e.g. spring-core
+	Version    string // e.g. 4.1.3.RELEASE
+	Classifier string // e.g. sources, javadoc, <the empty string>...
+	Extension  string // e.g. jar
 }
 
 // String returns the string representation of an artifact, as per Maven docs
