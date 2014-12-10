@@ -15,8 +15,7 @@ type Criteria interface {
 // None is the zero value for Criteria. It returns an empty map.
 const None = noCriteria(true)
 
-// there's no reason for more than one value to exist, so it's unexported and
-// made bool for Go to allow a const.
+// there's no reason for more than one value to exist, so it's unexported and made bool for Go to allow a const.
 type noCriteria bool
 
 func (empty noCriteria) Parameters() map[string]string {
@@ -47,13 +46,25 @@ type ByCoordinates struct {
 }
 
 func (gav ByCoordinates) Parameters() map[string]string {
-	return map[string]string{
-		"g": gav.GroupId,
-		"a": gav.ArtifactId,
-		"v": gav.Version,
-		"p": gav.Packaging,
-		"c": gav.Classifier,
+	result := map[string]string{}
+
+	if gav.GroupId != "" {
+		result["g"] = gav.GroupId
 	}
+	if gav.ArtifactId != "" {
+		result["a"] = gav.ArtifactId
+	}
+	if gav.Version != "" {
+		result["v"] = gav.Version
+	}
+	if gav.Packaging != "" {
+		result["p"] = gav.Packaging
+	}
+	if gav.Classifier != "" {
+		result["c"] = gav.Classifier
+	}
+
+	return result
 }
 
 func (gav ByCoordinates) String() string {

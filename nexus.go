@@ -196,6 +196,17 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 	return artifacts
 }
 
+// a slight modification of Go's v, ok := m[key] idiom. has returns false for ok if value is "".
+func has(m map[string]string, key string) (value string, ok bool) {
+	value, ok = m[key]
+
+	if ok && value == "" { // not ok!
+		return value, false
+	}
+
+	return value, ok
+}
+
 // returns all artifacts in this Nexus which pass the given filter. The expected keys in filter are the flags Nexus'
 // REST API accepts, with the same semantics.
 func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
@@ -210,7 +221,7 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 
 	from := 0
 	offset := 0
-	started := false              // do-while can sometimes be useful
+	started := false
 	artifacts := newArtifactSet() // acumulates the artifacts
 
 	for offset != 0 || !started {
@@ -234,11 +245,27 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 			return nil, err
 		}
 
-		// extract and store the artifacts. The set ensures we ignore repeated artifacts.
-		artifacts.add(extractArtifactsFrom(payload))
+		// extract the artifacts
+		payloadArtifacts := extractArtifactsFrom(payload)
 
-		// a lower bound for the number of artifacts returned, since every GAV holds at least one artifact.
-		// There will be some repetitions, but artifacts takes care of that.
+		// Nexus 2.x's search always returns the POMs, even when one filters specifically for the packaging or the
+		// classifier. So we'll have to take them out here.
+		packaging, okPack := has(filter, "p") // of course, if the user specifies "pom", she'll get POMs :)
+		_, okClass := has(filter, "c") // using has instead of Go's idiom, since c="" still means no empty flag
+
+		if (okPack && packaging != "pom") || okClass { // remove the POMs
+			for i := 0; i < len(payloadArtifacts); i++ {
+				if payloadArtifacts[i].Extension == "pom" {
+					payloadArtifacts = append(payloadArtifacts[:i], payloadArtifacts[i+1:]...)
+				}
+			}
+		}
+
+		// store the artifacts. The set ensures we ignore repetitions.
+		artifacts.add(payloadArtifacts)
+
+		// a lower bound for the number of artifacts returned, since every GAV in the payload holds at least one
+		// artifact. There will be some repetitions, but artifacts takes care of that.
 		offset = len(payload.Data)
 	}
 
