@@ -11,16 +11,35 @@ import (
 func Example() {
 	n := nexus.New("https://maven.java.net", credentials.None)
 
-	artifacts, err := n.Artifacts(
-		search.ByKeyword("javax.enterprise"))
-
+	// obtaining all repositories in Nexus
+	repositories, err := n.Repositories()
 	if err != nil {
 		fmt.Printf("%v: %v", reflect.TypeOf(err), err)
 		return
 	}
 
-	for _, a := range artifacts {
-		fmt.Println(a)
+	// printing out all artifacts which are in a hosted repository, and have
+	// in their groupId 'javax.enterprise' and a 'pom' packaging.
+	for _, repo := range repositories {
+		if repo.Type != "hosted" {
+			continue
+		}
+
+		artifacts, err := n.Artifacts(
+			search.InRepository{
+				repo.Id,
+				search.ByCoordinates{
+					GroupId:    "javax.enterprise*",
+					Classifier: "sources"}})
+
+		if err != nil {
+			fmt.Printf("%v: %v", reflect.TypeOf(err), err)
+			return
+		}
+
+		for _, a := range artifacts {
+			fmt.Println(a)
+		}
 	}
 }
 
