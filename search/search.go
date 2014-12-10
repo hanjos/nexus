@@ -13,7 +13,7 @@ type Criteria interface {
 }
 
 // None is the zero value for Criteria. It returns an empty map.
-const None = noCriteria(false)
+const None = noCriteria(true)
 
 // there's no reason for more than one value to exist, so it's unexported and
 // made bool for Go to allow a const.
