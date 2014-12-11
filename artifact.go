@@ -4,11 +4,12 @@ import "strings"
 
 // Artifact is a Maven coordinate to a single artifact.
 type Artifact struct {
-	GroupId    string // e.g. org.springframework
-	ArtifactId string // e.g. spring-core
-	Version    string // e.g. 4.1.3.RELEASE
-	Classifier string // e.g. sources, javadoc, <the empty string>...
-	Extension  string // e.g. jar
+	GroupId      string // e.g. org.springframework
+	ArtifactId   string // e.g. spring-core
+	Version      string // e.g. 4.1.3.RELEASE
+	Classifier   string // e.g. sources, javadoc, <the empty string>...
+	Extension    string // e.g. jar
+	RepositoryId string // e.g. releases
 }
 
 // String returns the string representation of an artifact, as per Maven docs
@@ -20,12 +21,13 @@ func (a Artifact) String() string {
 		parts = append(parts, a.Classifier)
 	}
 
-	return strings.Join(append(parts, a.Version), ":")
+	return strings.Join(append(parts, a.Version), ":") + "@" + a.RepositoryId
 }
 
 // used for the artifact set.
 func (a *Artifact) hash() string {
-	return a.GroupId + ":" + a.ArtifactId + ":" + a.Version + ":" + a.Extension + ":" + a.Classifier
+	return a.GroupId + ":" + a.ArtifactId + ":" + a.Version + ":" +
+			a.Extension + ":" + a.Classifier + "@" + a.RepositoryId
 }
 
 // since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.

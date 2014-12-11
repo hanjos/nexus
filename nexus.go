@@ -157,6 +157,7 @@ type artifactSearchResponse struct {
 		ArtifactId   string
 		Version      string
 		ArtifactHits []struct {
+			RepositoryId string
 			ArtifactLinks []struct {
 				Extension  string
 				Classifier string
@@ -185,11 +186,12 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 		v := artifact.Version
 
 		for _, hit := range artifact.ArtifactHits {
+			r := hit.RepositoryId
 			for _, link := range hit.ArtifactLinks {
 				e := link.Extension
 				c := link.Classifier
 
-				artifacts = append(artifacts, &Artifact{g, a, v, c, e})
+				artifacts = append(artifacts, &Artifact{g, a, v, c, e, r})
 			}
 		}
 	}
