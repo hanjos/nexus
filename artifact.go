@@ -1,6 +1,11 @@
 package nexus
 
-import "strings"
+import (
+	"fmt"
+	"github.com/hanjos/nexus/util"
+	"strings"
+	"time"
+)
 
 // Artifact is a Maven coordinate to a single artifact.
 type Artifact struct {
@@ -12,7 +17,7 @@ type Artifact struct {
 	RepositoryId string // e.g. releases
 }
 
-// String returns the string representation of an artifact, as per Maven docs
+// String implements the Stringer interface, for easy printing, as per Maven docs
 // (http://maven.apache.org/pom.html#Maven_Coordinates).
 func (a Artifact) String() string {
 	var parts = []string{a.GroupId, a.ArtifactId, a.Extension}
@@ -22,6 +27,16 @@ func (a Artifact) String() string {
 	}
 
 	return strings.Join(append(parts, a.Version), ":") + "@" + a.RepositoryId
+}
+
+// DefaultFileName builds the default name Maven gives an artifact given its metadata.
+func (a Artifact) DefaultFileName() string {
+	classifier := ""
+	if a.Classifier != "" {
+		classifier = "-" + a.Classifier
+	}
+
+	return a.ArtifactId + "-" + a.Version + classifier + "." + a.Extension
 }
 
 // used for the artifact set.
@@ -59,4 +74,22 @@ func (set *artifactSet) add(artifacts []*Artifact) {
 			set.data = append(set.data, artifact)
 		}
 	}
+}
+
+// ArtifactInfo holds extra information about the given artifact.
+type ArtifactInfo struct {
+	Artifact
+
+	Uploader    string
+	Uploaded    time.Time
+	LastChanged time.Time
+	Sha1        string
+	Size        util.FileSize
+	MimeType    string
+	Url         string
+}
+
+// String implements the Stringer interface, for easy printing.
+func (info ArtifactInfo) String() string {
+	return fmt.Sprintf("%v [SHA1 %v, Mime-Type %v, %v]", info.Artifact, info.Sha1, info.MimeType, info.Size)
 }

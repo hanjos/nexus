@@ -14,6 +14,8 @@ import (
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/errors"
 	"github.com/hanjos/nexus/search"
+	"github.com/hanjos/nexus/util"
+	"time"
 )
 
 // Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
@@ -26,6 +28,9 @@ type Client interface {
 
 	// Returns all repositories in this Nexus.
 	Repositories() ([]*Repository, error)
+
+	// Returns extra information about the given artifact.
+	InfoOf(artifact Artifact) (*ArtifactInfo, error)
 }
 
 // Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
@@ -358,7 +363,76 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 	return result.data, nil
 }
 
-// Repositories
+// InfoOf returns extra information about the given artifact.
+func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
+	url := "service/local/repositories/" + artifact.RepositoryId + "/content/" +
+		strings.Replace(artifact.GroupId, ".", "/", -1) + "/" + artifact.ArtifactId + "/" + artifact.Version +
+		"/" + artifact.DefaultFileName()
+
+	resp, err := nexus.fetch(url, map[string]string{"describe": "info"})
+	if err != nil {
+		return nil, err
+	}
+
+	body, err := bodyToBytes(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	payload, err := extractInfoPayloadFrom(body)
+	if err != nil {
+		return nil, err
+	}
+
+	return extractInfoFrom(payload, artifact), nil
+}
+
+type infoSearchResponse struct {
+	Data struct {
+		MimeType     string
+		Uploader     string
+		Uploaded     int64
+		LastChanged  int64
+		Size         int64
+		Sha1Hash     string
+		Repositories []struct {
+			RepositoryId string
+			ArtifactUrl  string
+		}
+	}
+}
+
+func extractInfoPayloadFrom(body []byte) (*infoSearchResponse, error) {
+	var payload *infoSearchResponse
+
+	err := json.Unmarshal(body, &payload)
+	if err != nil {
+		return nil, err
+	}
+
+	return payload, nil
+}
+
+func extractInfoFrom(payload *infoSearchResponse, artifact Artifact) *ArtifactInfo {
+	url := ""
+	for _, repo := range payload.Data.Repositories {
+		if repo.RepositoryId == artifact.RepositoryId {
+			url = repo.ArtifactUrl
+			break
+		}
+	}
+
+	return &ArtifactInfo{
+		Artifact:    artifact,
+		Uploader:    payload.Data.Uploader,
+		Uploaded:    time.Unix(payload.Data.Uploaded, 0),
+		LastChanged: time.Unix(payload.Data.LastChanged, 0),
+		Sha1:        payload.Data.Sha1Hash,
+		Size:        util.FileSize(payload.Data.Size),
+		MimeType:    payload.Data.MimeType,
+		Url:         url,
+	}
+}
 
 // Repositories returns all repositories in this Nexus.
 func (nexus Nexus2x) Repositories() ([]*Repository, error) {

@@ -71,19 +71,19 @@ func (gav ByCoordinates) String() string {
 	str := []string{}
 
 	if gav.GroupId != "" {
-		str = append(str, "g: " + gav.GroupId)
+		str = append(str, "g: "+gav.GroupId)
 	}
 	if gav.ArtifactId != "" {
-		str = append(str, "a: " + gav.ArtifactId)
+		str = append(str, "a: "+gav.ArtifactId)
 	}
 	if gav.Version != "" {
-		str = append(str, "v: " + gav.Version)
+		str = append(str, "v: "+gav.Version)
 	}
 	if gav.Packaging != "" {
-		str = append(str, "p: " + gav.Packaging)
+		str = append(str, "p: "+gav.Packaging)
 	}
 	if gav.Classifier != "" {
-		str = append(str, "c: " + gav.Classifier)
+		str = append(str, "c: "+gav.Classifier)
 	}
 
 	return "search.ByCoordinates(" + strings.Join(str, ", ") + ")"

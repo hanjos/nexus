@@ -11,7 +11,7 @@ type Repository struct {
 	RemoteURI string // e.g. http://repo1.maven.org/maven2/
 }
 
-// String returns a pleasant but informative string representation of repo.
+// String implements the Stringer interface, for easy printing.
 func (repo Repository) String() string {
 	var uri string
 	if repo.RemoteURI != "" {
