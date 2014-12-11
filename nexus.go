@@ -102,10 +102,13 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Artifacts returns all artifacts in this Nexus which satisfy the given criteria. Nil is the same as search.None.
-// If no criteria are given (e.g. search.None), it does a full search in all repositories. Generally you don't want
-// that, especially if you have proxy repositories; Maven Central has, at the time of this comment, over 800,000
-// artifacts (!), which in this implementation will be all loaded into memory (!!). But, if you insist...
+// Artifacts implements the Client interface, returning all artifacts in this Nexus which satisfy the given criteria.
+// Nil is the same as search.None. If no criteria are given (e.g. search.None), it does a full search in all
+// repositories.
+//
+// Generally you don't want that, especially if you have proxy repositories; Maven Central (which many people will
+// proxy) has, at the time of this comment, over 800,000 artifacts (!), which in this implementation will be all loaded
+// into memory (!!). But, if you insist...
 func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := search.OrZero(criteria).Parameters()
 
@@ -363,7 +366,7 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 	return result.data, nil
 }
 
-// InfoOf returns extra information about the given artifact.
+// InfoOf implements the client interface, fetching extra information about the given artifact.
 func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
 	url := "service/local/repositories/" + artifact.RepositoryId + "/content/" +
 		strings.Replace(artifact.GroupId, ".", "/", -1) + "/" + artifact.ArtifactId + "/" + artifact.Version +
@@ -434,7 +437,7 @@ func extractInfoFrom(payload *infoSearchResponse, artifact Artifact) *ArtifactIn
 	}
 }
 
-// Repositories returns all repositories in this Nexus.
+// Repositories implements the Client interface, returning all repositories in this Nexus.
 func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 	resp, err := nexus.fetch("service/local/repositories", nil)
 	if err != nil {

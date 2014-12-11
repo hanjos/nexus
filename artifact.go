@@ -7,7 +7,7 @@ import (
 	"time"
 )
 
-// Artifact is a Maven coordinate to a single artifact.
+// Artifact is a Maven coordinate to a single artifact, plus the repository where it came from.
 type Artifact struct {
 	GroupId      string // e.g. org.springframework
 	ArtifactId   string // e.g. spring-core
@@ -29,7 +29,7 @@ func (a Artifact) String() string {
 	return strings.Join(append(parts, a.Version), ":") + "@" + a.RepositoryId
 }
 
-// DefaultFileName builds the default name Maven gives an artifact given its metadata.
+// DefaultFileName return Maven's default name for this artifact, given its metadata.
 func (a Artifact) DefaultFileName() string {
 	classifier := ""
 	if a.Classifier != "" {

@@ -12,13 +12,12 @@ type Credentials interface {
 	Sign(request *http.Request)
 }
 
-// None is the zero value for Credentials.
+// None is the zero value for Credentials. Its Sign() removes Authorization data from the header.
 const None = noCredentials(true)
 
 // bool trick for Go to allow a const
 type noCredentials bool
 
-// Sign removes Authorization data from the header.
 func (auth noCredentials) Sign(request *http.Request) {
 	request.Header.Del("Authorization")
 }
@@ -43,10 +42,12 @@ type BasicAuth struct {
 	Password string
 }
 
+// Sign implements the Credentials interface, signing the header using HTTP Basic Authentication.
 func (auth BasicAuth) Sign(request *http.Request) {
 	request.SetBasicAuth(auth.Username, auth.Password)
 }
 
+// String implements the Stringer interface, for easy printing.
 func (auth BasicAuth) String() string {
 	return "BasicAuth{" + auth.Username + ", ***}"
 }
