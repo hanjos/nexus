@@ -27,7 +27,7 @@ func (a Artifact) String() string {
 // used for the artifact set.
 func (a *Artifact) hash() string {
 	return a.GroupId + ":" + a.ArtifactId + ":" + a.Version + ":" +
-			a.Extension + ":" + a.Classifier + "@" + a.RepositoryId
+		a.Extension + ":" + a.Classifier + "@" + a.RepositoryId
 }
 
 // since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.

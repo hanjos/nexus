@@ -157,7 +157,7 @@ type artifactSearchResponse struct {
 		ArtifactId   string
 		Version      string
 		ArtifactHits []struct {
-			RepositoryId string
+			RepositoryId  string
 			ArtifactLinks []struct {
 				Extension  string
 				Classifier string
@@ -254,7 +254,7 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 		// Nexus 2.x's search always returns the POMs, even when one filters specifically for the packaging or the
 		// classifier. So we'll have to take them out here.
 		packaging, okPack := has(filter, "p") // of course, if the user specifies "pom", she'll get POMs :)
-		_, okClass := has(filter, "c") // using has instead of Go's idiom, since c="" still means no empty flag
+		_, okClass := has(filter, "c")        // using has instead of Go's idiom, since c="" still means no empty flag
 
 		if (okPack && packaging != "pom") || okClass { // remove the POMs
 			for i := 0; i < len(payloadArtifacts); i++ {
