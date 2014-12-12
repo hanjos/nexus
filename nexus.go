@@ -363,11 +363,16 @@ func (nexus Nexus2x) readAllArtifacts() ([]*Artifact, error) {
 
 // InfoOf implements the client interface, fetching extra information about the given artifact.
 func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
-	url := "service/local/repositories/" + artifact.RepositoryId + "/content/" +
-		strings.Replace(artifact.GroupId, ".", "/", -1) + "/" + artifact.ArtifactId + "/" + artifact.Version +
-		"/" + artifact.DefaultFileName()
+	// first resolve the artifact: building the URL by hand may fail in some situations (e.g. snapshot artifacts, odd
+	// file names)
+	path, err := nexus.repositoryPathOf(artifact)
+	if err != nil {
+		return nil, err
+	}
 
-	resp, err := nexus.fetch(url, map[string]string{"describe": "info"})
+	// now we can reliably build the proper URL
+	resp, err := nexus.fetch("service/local/repositories/"+artifact.RepositoryId+"/content"+path,
+		map[string]string{"describe": "info"})
 	if err != nil {
 		return nil, err
 	}
@@ -384,6 +389,39 @@ func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
 	}
 
 	return extractInfoFrom(payload, artifact), nil
+}
+
+func (nexus Nexus2x) repositoryPathOf(artifact Artifact) (string, error) {
+	resp, err := nexus.fetch("service/local/artifact/maven/resolve",
+		map[string]string{
+			"g": artifact.GroupId,
+			"a": artifact.ArtifactId,
+			"v": artifact.Version,
+			"e": artifact.Extension,
+			"c": artifact.Classifier,
+			"r": artifact.RepositoryId,
+		})
+	if err != nil {
+		return "", err
+	}
+
+	body, err := bodyToBytes(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	var payload *struct {
+		Data struct {
+			RepositoryPath string
+		}
+	}
+
+	err = json.Unmarshal(body, &payload)
+	if err != nil {
+		return "", err
+	}
+
+	return payload.Data.RepositoryPath, nil
 }
 
 type infoSearchResponse struct {
