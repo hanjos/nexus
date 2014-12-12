@@ -113,40 +113,7 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := search.OrZero(criteria).Parameters()
 
 	if len(params) == 0 { // full search
-		// there's no easy way to do this, so here we go:
-		// 1) get the repos
-		repos, err := nexus.Repositories()
-		if err != nil {
-			return nil, err
-		}
-
-		// 2) search for the artifacts in each repo
-		artifacts := make(chan []*Artifact)
-		errors := make(chan error)
-		for _, repo := range repos {
-			go func(repo string) {
-				a, err := nexus.readArtifactsFrom(repo)
-				if err != nil {
-					errors <- err
-					return
-				}
-
-				artifacts <- a
-			}(repo.Id)
-		}
-
-		// 3) pile 'em up
-		result := newArtifactSet()
-		for i := 0; i < len(repos); i++ {
-			select {
-			case a := <-artifacts:
-				result.add(a)
-			case err := <-errors:
-				return nil, err
-			}
-		}
-
-		return result.data, err
+		return nexus.readAllArtifacts()
 	}
 
 	if len(params) == 1 {
@@ -172,17 +139,6 @@ type artifactSearchResponse struct {
 			}
 		}
 	}
-}
-
-func extractArtifactPayloadFrom(body []byte) (*artifactSearchResponse, error) {
-	var payload *artifactSearchResponse
-
-	err := json.Unmarshal(body, &payload)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
 }
 
 func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
@@ -251,7 +207,8 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 			return nil, err
 		}
 
-		payload, err := extractArtifactPayloadFrom(body)
+		var payload *artifactSearchResponse
+		err = json.Unmarshal(body, &payload)
 		if err != nil {
 			return nil, err
 		}
@@ -260,9 +217,9 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 		payloadArtifacts := extractArtifactsFrom(payload)
 
 		// Nexus 2.x's search always returns the POMs, even when one filters specifically for the packaging or the
-		// classifier. So we'll have to take them out here.
-		packaging, okPack := has(filter, "p") // of course, if the user specifies "pom", she'll get POMs :)
-		_, okClass := has(filter, "c")        // using has instead of Go's idiom, since c="" still means no empty flag
+		// classifier. So we'll have to take them out here. Of course, if the user specifies "pom", she'll get POMs :)
+		packaging, okPack := has(filter, "p") // using has instead of Go's idiom, since p="" still means no packaging
+		_, okClass := has(filter, "c")
 
 		if (okPack && packaging != "pom") || okClass { // remove the POMs
 			for i := 0; i < len(payloadArtifacts); i++ {
@@ -366,6 +323,44 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 	return result.data, nil
 }
 
+// returns all artifacts visible by this Nexus.
+func (nexus Nexus2x) readAllArtifacts() ([]*Artifact, error) {
+	// there's no easy way to do this, so here we go:
+	// 1) get the repos
+	repos, err := nexus.Repositories()
+	if err != nil {
+		return nil, err
+	}
+
+	// 2) search for the artifacts in each repo
+	artifacts := make(chan []*Artifact)
+	errors := make(chan error)
+	for _, repo := range repos {
+		go func(repo string) {
+			a, err := nexus.readArtifactsFrom(repo)
+			if err != nil {
+				errors <- err
+				return
+			}
+
+			artifacts <- a
+		}(repo.Id)
+	}
+
+	// 3) pile 'em up
+	result := newArtifactSet()
+	for i := 0; i < len(repos); i++ {
+		select {
+		case a := <-artifacts:
+			result.add(a)
+		case err := <-errors:
+			return nil, err
+		}
+	}
+
+	return result.data, err
+}
+
 // InfoOf implements the client interface, fetching extra information about the given artifact.
 func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
 	url := "service/local/repositories/" + artifact.RepositoryId + "/content/" +
@@ -382,7 +377,8 @@ func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
 		return nil, err
 	}
 
-	payload, err := extractInfoPayloadFrom(body)
+	var payload *infoSearchResponse
+	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -403,17 +399,6 @@ type infoSearchResponse struct {
 			ArtifactUrl  string
 		}
 	}
-}
-
-func extractInfoPayloadFrom(body []byte) (*infoSearchResponse, error) {
-	var payload *infoSearchResponse
-
-	err := json.Unmarshal(body, &payload)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
 }
 
 func extractInfoFrom(payload *infoSearchResponse, artifact Artifact) *ArtifactInfo {
@@ -449,7 +434,8 @@ func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 		return nil, err
 	}
 
-	payload, err := extractRepoPayloadFrom(body)
+	var payload *repoSearchResponse
+	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -466,17 +452,6 @@ type repoSearchResponse struct {
 		Format     string
 		RemoteUri  string
 	}
-}
-
-func extractRepoPayloadFrom(body []byte) (*repoSearchResponse, error) {
-	var payload *repoSearchResponse
-
-	err := json.Unmarshal(body, &payload)
-	if err != nil {
-		return nil, err
-	}
-
-	return payload, nil
 }
 
 func extractReposFrom(payload *repoSearchResponse) []*Repository {
