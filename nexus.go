@@ -30,7 +30,7 @@ type Client interface {
 	Repositories() ([]*Repository, error)
 
 	// Returns extra information about the given artifact.
-	InfoOf(artifact Artifact) (*ArtifactInfo, error)
+	InfoOf(artifact *Artifact) (*ArtifactInfo, error)
 }
 
 // Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
@@ -365,8 +365,8 @@ func (nexus Nexus2x) readAllArtifacts() ([]*Artifact, error) {
 	return result.data, err
 }
 
-// InfoOf implements the client interface, fetching extra information about the given artifact.
-func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
+// InfoOf implements the Client interface, fetching extra information about the given artifact.
+func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	// first resolve the artifact: building the URL by hand may fail in some situations (e.g. snapshot artifacts, odd
 	// file names)
 	path, err := nexus.repositoryPathOf(artifact)
@@ -395,7 +395,7 @@ func (nexus Nexus2x) InfoOf(artifact Artifact) (*ArtifactInfo, error) {
 	return extractInfoFrom(payload, artifact), nil
 }
 
-func (nexus Nexus2x) repositoryPathOf(artifact Artifact) (string, error) {
+func (nexus Nexus2x) repositoryPathOf(artifact *Artifact) (string, error) {
 	resp, err := nexus.fetch("service/local/artifact/maven/resolve",
 		map[string]string{
 			"g": artifact.GroupId,
@@ -443,7 +443,7 @@ type infoSearchResponse struct {
 	}
 }
 
-func extractInfoFrom(payload *infoSearchResponse, artifact Artifact) *ArtifactInfo {
+func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactInfo {
 	url := ""
 	for _, repo := range payload.Data.Repositories {
 		if repo.RepositoryId == artifact.RepositoryId {

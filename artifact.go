@@ -78,7 +78,7 @@ func (set *artifactSet) add(artifacts []*Artifact) {
 
 // ArtifactInfo holds extra information about the given artifact.
 type ArtifactInfo struct {
-	Artifact
+	*Artifact
 
 	Uploader    string
 	Uploaded    time.Time
