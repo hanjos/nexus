@@ -62,7 +62,11 @@ func (nexus Nexus2x) fullUrlFor(query string, filter map[string]string) string {
 
 // does the actual legwork, going to Nexus and validating the response.
 func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response, error) {
-	fullUrl := nexus.fullUrlFor(url, params)
+	fullUrl, err := util.CleanSlashes(nexus.fullUrlFor(url, params))
+	if err != nil {
+		return nil, err
+	}
+
 	get, err := http.NewRequest("GET", fullUrl, nil)
 	if err != nil {
 		return nil, err
@@ -82,7 +86,7 @@ func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response
 	switch true {
 	case status == http.StatusUnauthorized:
 		// the credentials don't check out
-		return nil, &errors.UnauthorizedError{nexus.fullUrlFor(url, params), nexus.Credentials}
+		return nil, &errors.UnauthorizedError{fullUrl, nexus.Credentials}
 	case 400 <= status && status < 600:
 		// Nexus complained, so error out
 		return nil, &errors.BadResponseError{nexus.Url, status, response.Status}

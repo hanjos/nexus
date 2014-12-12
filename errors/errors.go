@@ -26,3 +26,12 @@ type UnauthorizedError struct {
 func (err UnauthorizedError) Error() string {
 	return fmt.Sprintf("Unauthorized: %v doesn't have access to %v", err.Credentials, err.Url)
 }
+
+// MalformedUrlError is returned when the given URL could not be parsed.
+type MalformedUrlError struct {
+	Url string
+}
+
+func (err MalformedUrlError) Error() string {
+	return fmt.Sprintf("Malformed URL: %v", err.Url)
+}
