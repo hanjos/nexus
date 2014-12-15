@@ -193,10 +193,10 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 	from := 0
 	offset := 0
 	started := false
-	artifacts := newArtifactSet() // acumulates the artifacts
+	artifacts := newArtifactSet() // accumulates the artifacts
 
 	for offset != 0 || !started {
-		started = true // do-while can sometimes be useful
+		started = true // do-while can sometimes be useful :)
 
 		from = from + offset
 		filter["from"] = strconv.Itoa(from)
@@ -291,7 +291,7 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 	// 2) for every directory 'dir', do a search filtering for the groupId 'dir*' and the repository ID
 	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the results in common* appear also in com*)
 
-	result := newArtifactSet()
+	//result := newArtifactSet()
 
 	// 1)
 	dirs, err := nexus.firstLevelDirsOf(repositoryId)
@@ -299,70 +299,30 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 		return nil, err
 	}
 
-	// 2) these searches can be done concurrently :)
-	artifacts := make(chan []*Artifact)
-	errors := make(chan error)
-	for _, dir := range dirs {
-		go func(dir string) {
-			a, err := nexus.readArtifactsWhere(map[string]string{"g": dir + "*", "repositoryId": repositoryId})
-			if err != nil {
-				errors <- err
-				return
-			}
-
-			artifacts <- a
-		}(dir)
-	}
-
-	// 3)
-	for i := 0; i < len(dirs); i++ {
-		select {
-		case a := <-artifacts:
-			result.add(a)
-		case err := <-errors:
-			return nil, err
-		}
-	}
-
-	return result.data, nil
+	return concurrentArtifactSearch(
+		dirs,
+		func(datum string) ([]*Artifact, error) {
+			return nexus.readArtifactsWhere(map[string]string{"g": datum + "*", "repositoryId": repositoryId})
+		})
 }
 
 // returns all artifacts visible by this Nexus.
 func (nexus Nexus2x) readAllArtifacts() ([]*Artifact, error) {
-	// there's no easy way to do this, so here we go:
-	// 1) get the repos
+	// there's no easy way to do this, so get the repos and search for all artifacts in each one (yup)
 	repos, err := nexus.Repositories()
 	if err != nil {
 		return nil, err
 	}
 
-	// 2) search for the artifacts in each repo
-	artifacts := make(chan []*Artifact)
-	errors := make(chan error)
-	for _, repo := range repos {
-		go func(repo string) {
-			a, err := nexus.readArtifactsFrom(repo)
-			if err != nil {
-				errors <- err
-				return
-			}
-
-			artifacts <- a
-		}(repo.Id)
+	// all we need for the search is the IDs
+	ids := make([]string, len(repos))
+	for i, repo := range repos {
+		ids[i] = repo.Id
 	}
 
-	// 3) pile 'em up
-	result := newArtifactSet()
-	for i := 0; i < len(repos); i++ {
-		select {
-		case a := <-artifacts:
-			result.add(a)
-		case err := <-errors:
-			return nil, err
-		}
-	}
-
-	return result.data, err
+	return concurrentArtifactSearch(
+		ids,
+		func(datum string) ([]*Artifact, error) { return nexus.readArtifactsFrom(datum) })
 }
 
 // InfoOf implements the Client interface, fetching extra information about the given artifact.

@@ -93,3 +93,36 @@ type ArtifactInfo struct {
 func (info ArtifactInfo) String() string {
 	return fmt.Sprintf("%v [SHA1 %v, Mime-Type %v, %v]", info.Artifact, info.Sha1, info.MimeType, info.Size)
 }
+
+// A make-shift map-reducer, distributes an artifact search in multiple goroutines. Expects an array of strings and a
+// query function. There will be one goroutine for every element of data. Each goroutine will call query with its
+// respective datum.
+func concurrentArtifactSearch(data []string, query func(string) ([]*Artifact, error)) ([]*Artifact, error) {
+	// search for the artifacts in each element of data
+	artifacts := make(chan []*Artifact)
+	errors := make(chan error)
+	for _, datum := range data {
+		go func(datum string) {
+			a, err := query(datum)
+			if err != nil {
+				errors <- err
+				return
+			}
+
+			artifacts <- a
+		}(datum)
+	}
+
+	// pile 'em up
+	result := newArtifactSet()
+	for i := 0; i < len(data); i++ {
+		select {
+		case a := <-artifacts:
+			result.add(a)
+		case err := <-errors:
+			return nil, err
+		}
+	}
+
+	return result.data, nil
+}
