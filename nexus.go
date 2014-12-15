@@ -9,7 +9,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"strings"
 
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/errors"
@@ -45,24 +44,9 @@ func New(url string, c credentials.Credentials) Client {
 	return &Nexus2x{Url: url, Credentials: credentials.OrZero(c), HttpClient: &http.Client{}}
 }
 
-// builds the proper URL with parameters for GET-ing.
-func (nexus Nexus2x) fullUrlFor(query string, filter map[string]string) string {
-	params := []string{}
-
-	for k, v := range filter {
-		params = append(params, k+"="+v)
-	}
-
-	if len(params) == 0 {
-		return nexus.Url + "/" + query
-	} else {
-		return nexus.Url + "/" + query + "?" + strings.Join(params, "&")
-	}
-}
-
 // does the actual legwork, going to Nexus and validating the response.
-func (nexus Nexus2x) fetch(url string, params map[string]string) (*http.Response, error) {
-	fullUrl, err := util.CleanSlashes(nexus.fullUrlFor(url, params))
+func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response, error) {
+	fullUrl, err := util.CleanSlashes(util.BuildFullUrl(nexus.Url, path, query))
 	if err != nil {
 		return nil, err
 	}
@@ -117,16 +101,16 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := search.OrZero(criteria).Parameters()
 
 	if len(params) == 0 { // full search
-		return nexus.readAllArtifacts()
+		return nexus.fetchAllArtifacts()
 	}
 
 	if len(params) == 1 {
 		if repoId, ok := params["repositoryId"]; ok { // all in repo search
-			return nexus.readArtifactsFrom(repoId)
+			return nexus.fetchArtifactsFrom(repoId)
 		}
 	}
 
-	return nexus.readArtifactsWhere(params)
+	return nexus.fetchArtifactsWhere(params)
 }
 
 type artifactSearchResponse struct {
@@ -180,7 +164,7 @@ func has(m map[string]string, key string) (value string, ok bool) {
 
 // returns all artifacts in this Nexus which pass the given filter. The expected keys in filter are the flags Nexus'
 // REST API accepts, with the same semantics.
-func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
+func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
 	// This implementation is slightly tricky. As artifactSearchResponse shows, Nexus always wraps the artifacts in a
 	// GAV structure. This structure doesn't mean that within the wrapper are *all* the artifacts within that GAV, or
 	// that the next page won't repeat artifacts if an incomplete GAV was returned earlier.
@@ -245,7 +229,7 @@ func (nexus Nexus2x) readArtifactsWhere(filter map[string]string) ([]*Artifact, 
 }
 
 // returns the first-level directories in the given repository.
-func (nexus Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
+func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryId string) ([]string, error) {
 	// XXX Don't forget the ending /, or the response is always XML!
 	resp, err := nexus.fetch("service/local/repositories/"+repositoryId+"/content/", nil)
 	if err != nil {
@@ -283,7 +267,7 @@ func (nexus Nexus2x) firstLevelDirsOf(repositoryId string) ([]string, error) {
 }
 
 // returns all artifacts in the given repository.
-func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error) {
+func (nexus Nexus2x) fetchArtifactsFrom(repositoryId string) ([]*Artifact, error) {
 	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
 	// artifacts in a given repository by searching for *. This has been disabled in the newer versions, without any
 	// official alternative for "give me everything you have". So, the solution adopted here is:
@@ -294,7 +278,7 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 	//result := newArtifactSet()
 
 	// 1)
-	dirs, err := nexus.firstLevelDirsOf(repositoryId)
+	dirs, err := nexus.fetchFirstLevelDirsOf(repositoryId)
 	if err != nil {
 		return nil, err
 	}
@@ -302,12 +286,12 @@ func (nexus Nexus2x) readArtifactsFrom(repositoryId string) ([]*Artifact, error)
 	return concurrentArtifactSearch(
 		dirs,
 		func(datum string) ([]*Artifact, error) {
-			return nexus.readArtifactsWhere(map[string]string{"g": datum + "*", "repositoryId": repositoryId})
+			return nexus.fetchArtifactsWhere(map[string]string{"g": datum + "*", "repositoryId": repositoryId})
 		})
 }
 
 // returns all artifacts visible by this Nexus.
-func (nexus Nexus2x) readAllArtifacts() ([]*Artifact, error) {
+func (nexus Nexus2x) fetchAllArtifacts() ([]*Artifact, error) {
 	// there's no easy way to do this, so get the repos and search for all artifacts in each one (yup)
 	repos, err := nexus.Repositories()
 	if err != nil {
@@ -322,14 +306,14 @@ func (nexus Nexus2x) readAllArtifacts() ([]*Artifact, error) {
 
 	return concurrentArtifactSearch(
 		ids,
-		func(datum string) ([]*Artifact, error) { return nexus.readArtifactsFrom(datum) })
+		func(datum string) ([]*Artifact, error) { return nexus.fetchArtifactsFrom(datum) })
 }
 
 // InfoOf implements the Client interface, fetching extra information about the given artifact.
 func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	// first resolve the artifact: building the URL by hand may fail in some situations (e.g. snapshot artifacts, odd
 	// file names)
-	path, err := nexus.repositoryPathOf(artifact)
+	path, err := nexus.fetchRepositoryPathOf(artifact)
 	if err != nil {
 		return nil, err
 	}
@@ -355,7 +339,7 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	return extractInfoFrom(payload, artifact), nil
 }
 
-func (nexus Nexus2x) repositoryPathOf(artifact *Artifact) (string, error) {
+func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 	resp, err := nexus.fetch("service/local/artifact/maven/resolve",
 		map[string]string{
 			"g": artifact.GroupId,

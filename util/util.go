@@ -1,10 +1,11 @@
-// Package util store helper code that's useful but not... business logic, so to speak.
+// Package util stores useful helper code.
 package util
 
 import (
 	"fmt"
 	"github.com/hanjos/nexus/errors"
 	"regexp"
+	"strings"
 )
 
 // FileSize represents an amount of bytes.
@@ -45,4 +46,20 @@ func CleanSlashes(url string) (string, error) {
 	rest := urlRe.ReplaceAllString(url, "${rest}")
 
 	return scheme + "://" + slashesRe.ReplaceAllString(rest, "/"), nil
+}
+
+// BuildFullUrl builds a complete URL string in the format host/path?query, where query's keys and values will be
+// formatted as k=v. This function is a (very) simplified version of url.URL.String().
+func BuildFullUrl(host string, path string, query map[string]string) string {
+	params := []string{}
+
+	for k, v := range query {
+		params = append(params, k+"="+v)
+	}
+
+	if len(params) == 0 {
+		return host + "/" + path
+	} else {
+		return host + "/" + path + "?" + strings.Join(params, "&")
+	}
 }
