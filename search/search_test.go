@@ -6,10 +6,26 @@ import (
 	"github.com/hanjos/nexus/search"
 )
 
-func ExampleByCoordinates_issues() {
-	// Nexus' coordinate search has several issues and peculiarities, which
-	// affect the results this library gives. Some examples follow below.
+func ExampleNone() {
+	n := nexus.New("https://maven.java.net", credentials.None)
 
+	// Return all artifacts in this Nexus (this can take a LONG time... and RAM)
+	n.Artifacts(search.None)
+}
+
+func ExampleByKeyword() {
+	n := nexus.New("https://maven.java.net", credentials.None)
+
+	// Return all artifacts with javax.enterprise somewhere.
+	n.Artifacts(search.ByKeyword("javax.enterprise*"))
+
+	// This search may or may not return an error, depending on the version of
+	// the Nexus being accessed. On newer Nexuses (sp?) "*" searches are
+	// invalid.
+	n.Artifacts(search.ByKeyword("*"))
+}
+
+func ExampleByCoordinates_issues() {
 	n := nexus.New("https://maven.java.net", credentials.None)
 
 	// A coordinate search requires specifying at least either a groupId, an
@@ -28,4 +44,14 @@ func ExampleByCoordinates_issues() {
 	// "pom", not all POM artifacts with groupId com.sun*! Packaging is not
 	// the same as extension.
 	n.Artifacts(search.ByCoordinates{GroupId: "com.sun*", Packaging: "pom"})
+}
+
+func ExampleInRepository() {
+	n := nexus.New("https://maven.java.net", credentials.None)
+
+	n.Artifacts(
+		search.InRepository{
+			"releases",
+			search.ByCoordinates{GroupId: "com.sun*", Packaging: "pom"},
+		})
 }

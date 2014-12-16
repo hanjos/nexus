@@ -36,7 +36,8 @@ func OrZero(c Criteria) Criteria {
 	return c
 }
 
-// Searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates).
+// Searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates). Nexus' search by
+// coordinates has some issues and peculiarities, shown in the example.
 type ByCoordinates struct {
 	GroupId    string // e.g. com.atlassian.maven.plugins
 	ArtifactId string // e.g. maven-jgitflow-plugin
