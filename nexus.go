@@ -64,13 +64,13 @@ func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response
 
 	// lets see if everything is alright
 	status := response.StatusCode
-	switch true {
+	switch {
 	case status == http.StatusUnauthorized:
 		// the credentials don't check out
 		return nil, &credentials.Error{fullUrl, nexus.Credentials}
 	case 400 <= status && status < 600:
 		// Nexus complained, so error out
-		return nil, &Error{nexus.Url, status, response.Status}
+		return nil, nexus.errorFromResponse(response)
 	}
 
 	// all is good, carry on
@@ -92,10 +92,47 @@ type Error struct {
 	Url        string // e.g. http://nexus.somewhere.com
 	StatusCode int    // e.g. 400
 	Status     string // e.g. 400 Bad response
+	Message    string // e.g. Error (400 Bad response) from http://nexus.somewhere.com
 }
 
 func (err Error) Error() string {
-	return fmt.Sprintf("Bad response (%v) from %v", err.Status, err.Url)
+	return err.Message
+}
+
+// Nexus' API returns error messages sometimes; this function is an attempt to capture and return them to the caller.
+func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
+	e := Error{
+		Url:        nexus.Url,
+		StatusCode: response.StatusCode,
+		Status:     response.Status,
+		Message:    fmt.Sprintf("Error (%v) from %v", response.Status, nexus.Url),
+	}
+
+	body, err := bodyToBytes(response.Body)
+	if err != nil {
+		return e // problems extracting the response shouldn't mask the original error
+	}
+
+	// try to extract a message from the response
+	var errorResponse struct {
+		Errors []struct {
+			Msg string
+		}
+	}
+
+	err = json.Unmarshal(body, &errorResponse)
+	if err != nil {
+		return e // the response doesn't have errorResponse's format; use the default message then
+	}
+
+	if len(errorResponse.Errors) != 1 {
+		return e // not quite sure what to do here, so use the default message
+	}
+
+	// found a message; use it
+	e.Message = errorResponse.Errors[0].Msg
+
+	return e
 }
 
 // Artifacts implements the Client interface, returning all artifacts in this Nexus which satisfy the given criteria.
