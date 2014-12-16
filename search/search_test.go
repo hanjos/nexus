@@ -6,13 +6,6 @@ import (
 	"github.com/hanjos/nexus/search"
 )
 
-func ExampleNone() {
-	n := nexus.New("https://maven.java.net", credentials.None)
-
-	// Return all artifacts in this Nexus (this can take a LONG time... and RAM)
-	n.Artifacts(search.None)
-}
-
 func ExampleByKeyword() {
 	n := nexus.New("https://maven.java.net", credentials.None)
 
