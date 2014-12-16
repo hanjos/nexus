@@ -6,8 +6,8 @@ import (
 	"strings"
 )
 
-// Criteria compiles to a single map with the parameters Nexus expects. Nexus' API supports 4 different types of
-// searches, but in the end, all we need is a map holding the parameters to pass along.
+// Criteria represents a search request. It compiles to a single map with the parameters Nexus expects. Nexus' API
+// supports 4 different types of searches, but in the end, all we need is a map holding the parameters to pass along.
 type Criteria interface {
 	Parameters() map[string]string
 }
@@ -36,13 +36,13 @@ func OrZero(c Criteria) Criteria {
 	return c
 }
 
-// Searches by Maven coordinates.
+// Searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates).
 type ByCoordinates struct {
-	GroupId    string
-	ArtifactId string
-	Version    string
-	Packaging  string
-	Classifier string
+	GroupId    string // e.g. com.atlassian.maven.plugins
+	ArtifactId string // e.g. maven-jgitflow-plugin
+	Version    string // e.g. 1.0-alpha27
+	Classifier string // e.g. sources
+	Packaging  string // e.g. maven-plugin
 }
 
 func (gav ByCoordinates) Parameters() map[string]string {
