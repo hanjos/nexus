@@ -29,7 +29,7 @@ func (err UnauthorizedError) Error() string {
 
 // MalformedUrlError is returned when the given URL could not be parsed.
 type MalformedUrlError struct {
-	Url string
+	Url string // e.g. http:/:malformed.url.com
 }
 
 func (err MalformedUrlError) Error() string {

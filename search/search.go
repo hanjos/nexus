@@ -36,14 +36,14 @@ func OrZero(c Criteria) Criteria {
 	return c
 }
 
-// Searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates). Nexus' search by
-// coordinates has some issues and peculiarities, shown in the example.
+// ByCoordinates searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates). Nexus'
+// search by coordinates has some issues and peculiarities, shown in the example below.
 type ByCoordinates struct {
 	GroupId    string // e.g. com.atlassian.maven.plugins
 	ArtifactId string // e.g. maven-jgitflow-plugin
-	Version    string // e.g. 1.0-alpha27
-	Classifier string // e.g. sources
-	Packaging  string // e.g. maven-plugin
+	Version    string // e.g. 1.0-alpha27, 2.0.0-SNAPSHOT...
+	Classifier string // e.g. sources, javadoc, jdk15...
+	Packaging  string // e.g. maven-plugin, ear, war, jar, pom...
 }
 
 func (gav ByCoordinates) Parameters() map[string]string {
@@ -90,7 +90,7 @@ func (gav ByCoordinates) String() string {
 	return "search.ByCoordinates(" + strings.Join(str, ", ") + ")"
 }
 
-// Searches by keywords.
+// ByKeyword searches by keywords.
 type ByKeyword string
 
 func (q ByKeyword) Parameters() map[string]string {
@@ -103,7 +103,7 @@ func (q ByKeyword) String() string {
 	return "search.ByKeyword(" + string(q) + ")"
 }
 
-// Searches by class name.
+// ByClassname searches by class name.
 type ByClassname string
 
 func (cn ByClassname) Parameters() map[string]string {
@@ -116,7 +116,7 @@ func (cn ByClassname) String() string {
 	return "search.ByClassname(" + string(cn) + ")"
 }
 
-// Searches by SHA1 checksum.
+// ByChecksum searches by SHA1 checksum.
 type ByChecksum string
 
 func (sha1 ByChecksum) Parameters() map[string]string {
@@ -129,7 +129,7 @@ func (sha1 ByChecksum) String() string {
 	return "search.ByChecksum(" + string(sha1) + ")"
 }
 
-// Searches for all artifacts in the given repository ID.
+// ByRepository searches for all artifacts in the given repository ID.
 type ByRepository string
 
 func (byRepo ByRepository) Parameters() map[string]string {
@@ -142,7 +142,7 @@ func (byRepo ByRepository) String() string {
 	return "search.ByRepository(" + string(byRepo) + ")"
 }
 
-// Searches for all artifacts in the given repository ID following the given criteria.
+// InRepository searches for all artifacts in the given repository ID following the given criteria.
 type InRepository struct {
 	RepositoryId string
 

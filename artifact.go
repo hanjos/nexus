@@ -2,9 +2,10 @@ package nexus
 
 import (
 	"fmt"
-	"github.com/hanjos/nexus/util"
 	"strings"
 	"time"
+
+	"github.com/hanjos/nexus/util"
 )
 
 // Artifact is a Maven coordinate to a single artifact, plus the repository where it came from.
