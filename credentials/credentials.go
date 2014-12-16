@@ -4,7 +4,10 @@
 */
 package credentials
 
-import "net/http"
+import (
+	"fmt"
+	"net/http"
+)
 
 // Credentials is satisfied by whoever can configure an http.Request properly.
 type Credentials interface {
@@ -50,4 +53,14 @@ func (auth BasicAuth) Sign(request *http.Request) {
 // String implements the Stringer interface, for easy printing.
 func (auth BasicAuth) String() string {
 	return "BasicAuth{" + auth.Username + ", ***}"
+}
+
+// Error is returned when the given credentials aren't authorized to reach the given URL.
+type Error struct {
+	Url         string      // e.g. http://nexus.somewhere.com
+	Credentials Credentials // e.g. credentials.BasicAuth{"username", "password"}
+}
+
+func (err Error) Error() string {
+	return fmt.Sprintf("%v doesn't have access to %v", err.Credentials, err.Url)
 }

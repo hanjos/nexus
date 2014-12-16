@@ -8,8 +8,8 @@ import (
 	"strconv"
 	"time"
 
+	"fmt"
 	"github.com/hanjos/nexus/credentials"
-	"github.com/hanjos/nexus/errors"
 	"github.com/hanjos/nexus/search"
 	"github.com/hanjos/nexus/util"
 )
@@ -67,10 +67,10 @@ func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response
 	switch true {
 	case status == http.StatusUnauthorized:
 		// the credentials don't check out
-		return nil, &errors.UnauthorizedError{fullUrl, nexus.Credentials}
+		return nil, &credentials.Error{fullUrl, nexus.Credentials}
 	case 400 <= status && status < 600:
 		// Nexus complained, so error out
-		return nil, &errors.BadResponseError{nexus.Url, status, response.Status}
+		return nil, &Error{nexus.Url, status, response.Status}
 	}
 
 	// all is good, carry on
@@ -85,6 +85,17 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	defer body.Close() // don't forget to Close() body at the end!
 
 	return buf.Bytes(), nil
+}
+
+// Error is returned when there's an error on an attempt to access Nexus.
+type Error struct {
+	Url        string // e.g. http://nexus.somewhere.com
+	StatusCode int    // e.g. 400
+	Status     string // e.g. 400 Bad response
+}
+
+func (err Error) Error() string {
+	return fmt.Sprintf("Bad response (%v) from %v", err.Status, err.Url)
 }
 
 // Artifacts implements the Client interface, returning all artifacts in this Nexus which satisfy the given criteria.

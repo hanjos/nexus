@@ -3,7 +3,6 @@ package util
 
 import (
 	"fmt"
-	"github.com/hanjos/nexus/errors"
 	"regexp"
 	"strings"
 )
@@ -36,10 +35,10 @@ var urlRe = regexp.MustCompile(`^(?P<scheme>[^:]+)://(?P<rest>.+)`)
 var slashesRe = regexp.MustCompile(`//+`)
 
 // CleanSlashes removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
-// Returns an errors.MalformedUrlError if the given URL can't be parsed.
+// Returns an util.MalformedUrlError if the given URL can't be parsed.
 func CleanSlashes(url string) (string, error) {
 	if !urlRe.MatchString(url) {
-		return "", &errors.MalformedUrlError{url}
+		return "", &MalformedUrlError{url}
 	}
 
 	scheme := urlRe.ReplaceAllString(url, "${scheme}")
@@ -62,4 +61,13 @@ func BuildFullUrl(host string, path string, query map[string]string) string {
 	} else {
 		return host + "/" + path + "?" + strings.Join(params, "&")
 	}
+}
+
+// MalformedUrlError is returned when the given URL could not be parsed.
+type MalformedUrlError struct {
+	Url string // e.g. http:/:malformed.url.com
+}
+
+func (err MalformedUrlError) Error() string {
+	return fmt.Sprintf("Malformed URL: %v", err.Url)
 }
