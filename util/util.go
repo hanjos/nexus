@@ -32,8 +32,8 @@ func (size FileSize) String() string {
 	}
 }
 
-var urlRe = regexp.MustCompile("^(?P<scheme>[^:]+)://(?P<rest>.+)")
-var slashesRe = regexp.MustCompile("//+")
+var urlRe = regexp.MustCompile(`^(?P<scheme>[^:]+)://(?P<rest>.+)`)
+var slashesRe = regexp.MustCompile(`//+`)
 
 // CleanSlashes removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
 // Returns an errors.MalformedUrlError if the given URL can't be parsed.

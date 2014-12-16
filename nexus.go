@@ -201,24 +201,8 @@ func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact,
 			return nil, err
 		}
 
-		// extract the artifacts
-		payloadArtifacts := extractArtifactsFrom(payload)
-
-		// Nexus 2.x's search always returns the POMs, even when one filters specifically for the packaging or the
-		// classifier. So we'll have to take them out here. Of course, if the user specifies "pom", she'll get POMs :)
-		packaging, okPack := has(filter, "p") // using has instead of Go's idiom, since p="" still means no packaging
-		_, okClass := has(filter, "c")
-
-		if (okPack && packaging != "pom") || okClass { // remove the POMs
-			for i := 0; i < len(payloadArtifacts); i++ {
-				if payloadArtifacts[i].Extension == "pom" {
-					payloadArtifacts = append(payloadArtifacts[:i], payloadArtifacts[i+1:]...)
-				}
-			}
-		}
-
-		// store the artifacts. The set ensures we ignore repetitions.
-		artifacts.add(payloadArtifacts)
+		// extract and store the artifacts, filtering out the POMs if necessary. The set ensures we ignore repetitions.
+		artifacts.add(filterPoms(extractArtifactsFrom(payload), filter))
 
 		// a lower bound for the number of artifacts returned, since every GAV in the payload holds at least one
 		// artifact. There will be some repetitions, but artifacts takes care of that.
@@ -226,6 +210,24 @@ func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact,
 	}
 
 	return artifacts.data, nil
+}
+
+// Nexus 2.x's search always returns the POMs, even when one filters specifically for the packaging or the
+// classifier. So we'll have to take them out here. Of course, if the user specifies "pom", she'll get POMs :)
+// XXX: this function modifies artifacts!
+func filterPoms(artifacts []*Artifact, filter map[string]string) []*Artifact {
+	packaging, okPack := has(filter, "p") // using has instead of Go's idiom, since p="" still means no packaging
+	_, okClass := has(filter, "c")
+
+	if (okPack && packaging != "pom") || okClass { // remove the POMs
+		for i := 0; i < len(artifacts); i++ {
+			if artifacts[i].Extension == "pom" {
+				artifacts = append(artifacts[:i], artifacts[i+1:]...)
+			}
+		}
+	}
+
+	return artifacts
 }
 
 // returns the first-level directories in the given repository.
