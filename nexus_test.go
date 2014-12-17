@@ -56,5 +56,5 @@ func ExampleNexus2x_Artifacts() {
 			search.ByKeyword("javax.enterprise")})
 
 	// searching for every artifact in Nexus (WARNING: this can take a LOOONG time - and memory!)
-	artifacts, err := n.Artifacts(search.None)
+	artifacts, err := n.Artifacts(search.All)
 }

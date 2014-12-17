@@ -18,8 +18,8 @@ import (
 // versions may need or benefit from a specific client.
 type Client interface {
 	// Returns all artifacts in this Nexus which satisfy the given criteria.
-	// Nil is the same as search.None. If no criteria are given
-	// (e.g. search.None), it does a full search in all repositories.
+	// Nil is the same as search.All. If no criteria are given
+	// (e.g. search.All), it does a full search in all repositories.
 	Artifacts(criteria search.Criteria) ([]*Artifact, error)
 
 	// Returns all repositories in this Nexus.
@@ -136,7 +136,7 @@ func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
 }
 
 // Artifacts implements the Client interface, returning all artifacts in this Nexus which satisfy the given criteria.
-// Nil is the same as search.None. If no criteria are given (e.g. search.None), it does a full search in all
+// Nil is the same as search.All. If no criteria are given (e.g. search.All), it does a full search in all
 // repositories.
 //
 // Generally you don't want that, especially if you have proxy repositories; Maven Central (which many people will

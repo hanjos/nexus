@@ -12,8 +12,8 @@ type Criteria interface {
 	Parameters() map[string]string
 }
 
-// None is the zero value for Criteria. Its Parameters() returns an empty map.
-const None = noCriteria(true)
+// All is the zero value for Criteria. Its Parameters() returns an empty map.
+const All = noCriteria(true)
 
 // there's no reason for more than one value to exist, so it's unexported and made bool for Go to allow a const.
 type noCriteria bool
@@ -23,14 +23,14 @@ func (empty noCriteria) Parameters() map[string]string {
 }
 
 func (empty noCriteria) String() string {
-	return "search.None"
+	return "search.All"
 }
 
-// OrZero returns the given criteria untouched if it's not nil, and search.None otherwise. Useful for when one must
+// OrZero returns the given criteria untouched if it's not nil, and search.All otherwise. Useful for when one must
 // ensure that the given criteria is non-nil.
 func OrZero(c Criteria) Criteria {
 	if c == nil {
-		return None
+		return All
 	}
 
 	return c
