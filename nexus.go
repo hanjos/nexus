@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"time"
 
-	"fmt"
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
 	"github.com/hanjos/nexus/util"
@@ -85,54 +84,6 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	defer body.Close() // don't forget to Close() body at the end!
 
 	return buf.Bytes(), nil
-}
-
-// Error is returned when there's an error on an attempt to access Nexus.
-type Error struct {
-	Url        string // e.g. http://nexus.somewhere.com
-	StatusCode int    // e.g. 400
-	Status     string // e.g. 400 Bad response
-	Message    string // e.g. Error (400 Bad response) from http://nexus.somewhere.com
-}
-
-func (err Error) Error() string {
-	return err.Message
-}
-
-// Nexus' API returns error messages sometimes; this function is an attempt to capture and return them to the caller.
-func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
-	e := Error{
-		Url:        nexus.Url,
-		StatusCode: response.StatusCode,
-		Status:     response.Status,
-		Message:    fmt.Sprintf("Error (%v) from %v", response.Status, nexus.Url),
-	}
-
-	body, err := bodyToBytes(response.Body)
-	if err != nil {
-		return e // problems extracting the response shouldn't mask the original error
-	}
-
-	// try to extract a message from the response
-	var errorResponse struct {
-		Errors []struct {
-			Msg string
-		}
-	}
-
-	err = json.Unmarshal(body, &errorResponse)
-	if err != nil {
-		return e // the response doesn't have errorResponse's format; use the default message then
-	}
-
-	if len(errorResponse.Errors) != 1 {
-		return e // not quite sure what to do here, so use the default message
-	}
-
-	// found a message; use it
-	e.Message = errorResponse.Errors[0].Msg
-
-	return e
 }
 
 // Artifacts implements the Client interface, returning all artifacts in this Nexus which satisfy the given criteria.
