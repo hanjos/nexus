@@ -42,7 +42,7 @@ func New(url string, c credentials.Credentials) Client {
 
 // does the actual legwork, going to Nexus and validating the response.
 func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response, error) {
-	fullUrl, err := util.CleanSlashes(util.BuildFullUrl(nexus.Url, path, query))
+	fullUrl, err := util.BuildFullUrl(nexus.Url, path, query)
 	if err != nil {
 		return nil, err
 	}
@@ -247,7 +247,7 @@ func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryId string) ([]string, error
 		}
 	}
 
-	err = json.Unmarshal([]byte(body), &payload)
+	err = json.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -273,14 +273,13 @@ func (nexus Nexus2x) fetchArtifactsFrom(repositoryId string) ([]*Artifact, error
 	// 2) for every directory 'dir', do a search filtering for the groupId 'dir*' and the repository ID
 	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the results in common* appear also in com*)
 
-	//result := newArtifactSet()
-
 	// 1)
 	dirs, err := nexus.fetchFirstLevelDirsOf(repositoryId)
 	if err != nil {
 		return nil, err
 	}
 
+	// 2) and 3)
 	return concurrentArtifactSearch(
 		dirs,
 		func(datum string) ([]*Artifact, error) {

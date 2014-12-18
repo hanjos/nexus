@@ -34,22 +34,22 @@ func (size FileSize) String() string {
 var urlRe = regexp.MustCompile(`^(?P<scheme>[^:]+)://(?P<rest>.+)`)
 var slashesRe = regexp.MustCompile(`//+`)
 
-// CleanSlashes removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
+// Removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
 // Returns an util.MalformedUrlError if the given URL can't be parsed.
-func CleanSlashes(url string) (string, error) {
-	if !urlRe.MatchString(url) {
+func cleanSlashes(url string) (string, error) {
+	matches := urlRe.FindStringSubmatch(url)
+	if matches == nil {
 		return "", &MalformedUrlError{url}
 	}
 
-	scheme := urlRe.ReplaceAllString(url, "${scheme}")
-	rest := urlRe.ReplaceAllString(url, "${rest}")
-
-	return scheme + "://" + slashesRe.ReplaceAllString(rest, "/"), nil
+	// if we got here, scheme = matches[1] and rest = matches[2]. Clean the extraneous slashes
+	return matches[1] + "://" + slashesRe.ReplaceAllString(matches[2], "/"), nil
 }
 
 // BuildFullUrl builds a complete URL string in the format host/path?query, where query's keys and values will be
-// formatted as k=v. This function is a (very) simplified version of url.URL.String().
-func BuildFullUrl(host string, path string, query map[string]string) string {
+// formatted as k=v. Returns an util.MalformedUrlError if the given URL can't be parsed. This function is a (very)
+// simplified version of url.URL.String().
+func BuildFullUrl(host string, path string, query map[string]string) (string, error) {
 	params := []string{}
 
 	for k, v := range query {
@@ -57,9 +57,9 @@ func BuildFullUrl(host string, path string, query map[string]string) string {
 	}
 
 	if len(params) == 0 {
-		return host + "/" + path
+		return cleanSlashes(host + "/" + path)
 	} else {
-		return host + "/" + path + "?" + strings.Join(params, "&")
+		return cleanSlashes(host + "/" + path + "?" + strings.Join(params, "&"))
 	}
 }
 
