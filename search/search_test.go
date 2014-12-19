@@ -144,6 +144,13 @@ func TestInRepositorySetsTheProperFields(t *testing.T) {
 	checkMap(t, map[string]string{"repositoryId": "repositoryId", "sha1": "sha1"}, criteria)
 }
 
+func TestInRepositoryWithSearchAllIsTheSameAsByRepository(t *testing.T) {
+	inRepo := search.InRepository{"repositoryId", search.All}.Parameters()
+	byRepo := search.ByRepository("repositoryId").Parameters()
+
+	checkMap(t, byRepo, inRepo)
+}
+
 // Examples
 
 func ExampleByKeyword() {
