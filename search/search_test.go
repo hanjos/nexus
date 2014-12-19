@@ -8,20 +8,34 @@ import (
 	"testing"
 )
 
-func checkMap(t *testing.T, expected map[string]string, actual map[string]string) {
-	if len(expected) != len(actual) {
-		t.Errorf("Wrong number of fields: expected %v, got %v", len(expected), len(actual))
+func mapDiff(expected map[string]string, actual map[string]string) (diff []string, onlyExpected []string, onlyActual []string) {
+	keysSeen := map[string]bool{}
+
+	for kExp, vExp := range expected {
+		keysSeen[kExp] = true // marking kExp to avoid redoing work
+
+		vAct, ok := actual[kExp]
+		if !ok { // kExp isn't in actual
+			onlyExpected = append(onlyExpected, kExp)
+		} else if vAct != vExp { // expected and actual differ
+			diff = append(diff, kExp)
+		} // else the keys and values match, nothing to do
 	}
 
-	for k, v := range actual {
-		vExp, ok := expected[k]
+	for kAct, vAct := range actual {
+		if keysSeen[kAct] { // already processed, move along
+			continue
+		}
 
-		if !ok {
-			t.Errorf("Unexpected field %q", k)
-		} else if vExp != v {
-			t.Errorf("Expected value %q for field %q, got %q", vExp, k, v)
+		vExp, ok := expected[kAct]
+		if !ok { // kAct isn't in actual
+			onlyActual = append(onlyActual, kAct)
+		} else if vExp != vAct { // expected and actual differ
+			diff = append(diff, kAct)
 		}
 	}
+
+	return // diff, onlyExpected, onlyActual
 }
 
 func TestAllImplementsCriteria(t *testing.T) {
@@ -43,45 +57,23 @@ func TestByCoordinatesImplementsCriteria(t *testing.T) {
 	}
 }
 
-type pair struct {
-	expected string
-	actual   string
-}
-
 func TestByCoordinatesSetsTheProperFields(t *testing.T) {
-	criteria := search.ByCoordinates{GroupId: "g", ArtifactId: "a", Version: "v", Packaging: "p", Classifier: "c"}.Parameters()
+	actual := search.ByCoordinates{GroupId: "g", ArtifactId: "a", Version: "v", Packaging: "p", Classifier: "c"}.Parameters()
+	expected := map[string]string{"g": "g", "a": "a", "v": "v", "p": "p", "c": "c"}
 
-	expected := []string{"g", "a", "v", "p", "c"}
-	missing := []string{}
-	wrong := []pair{}
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
 
-	for _, exp := range expected {
-		v, ok := criteria[exp]
-
-		if !ok {
-			missing = append(missing, exp)
-		}
-		if v != exp {
-			wrong = append(wrong, pair{exp, v})
-		}
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
 	}
 
-	if len(missing) != 0 {
-		t.Errorf("Missing fields %v", missing)
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
 	}
 
-	if len(wrong) != 0 {
-		t.Errorf("Fields with wrong values:\n")
-		for _, p := range wrong {
-			t.Errorf("Field %q expected value %q, got %q", p.expected, p.expected, p.actual)
-		}
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
 	}
-}
-
-func TestByCoordinatesSetsOnlyTheGivenFields(t *testing.T) {
-	criteria := search.ByCoordinates{GroupId: "g", ArtifactId: "a"}.Parameters()
-
-	checkMap(t, map[string]string{"g": "g", "a": "a"}, criteria)
 }
 
 func TestByClassnameImplementsCriteria(t *testing.T) {
@@ -91,9 +83,22 @@ func TestByClassnameImplementsCriteria(t *testing.T) {
 }
 
 func TestByClassnameSetsTheProperFields(t *testing.T) {
-	criteria := search.ByClassname("cn").Parameters()
+	actual := search.ByClassname("cn").Parameters()
+	expected := map[string]string{"cn": "cn"}
 
-	checkMap(t, map[string]string{"cn": "cn"}, criteria)
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
+	}
+
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
+	}
+
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
+	}
 }
 
 func TestByChecksumImplementsCriteria(t *testing.T) {
@@ -103,9 +108,22 @@ func TestByChecksumImplementsCriteria(t *testing.T) {
 }
 
 func TestByChecksumSetsTheProperFields(t *testing.T) {
-	criteria := search.ByChecksum("sha1").Parameters()
+	actual := search.ByChecksum("sha1").Parameters()
+	expected := map[string]string{"sha1": "sha1"}
 
-	checkMap(t, map[string]string{"sha1": "sha1"}, criteria)
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
+	}
+
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
+	}
+
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
+	}
 }
 
 func TestByKeywordImplementsCriteria(t *testing.T) {
@@ -115,9 +133,22 @@ func TestByKeywordImplementsCriteria(t *testing.T) {
 }
 
 func TestByKeywordSetsTheProperFields(t *testing.T) {
-	criteria := search.ByKeyword("q").Parameters()
+	actual := search.ByKeyword("q").Parameters()
+	expected := map[string]string{"q": "q"}
 
-	checkMap(t, map[string]string{"q": "q"}, criteria)
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
+	}
+
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
+	}
+
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
+	}
 }
 
 func TestByRepositoryImplementsCriteria(t *testing.T) {
@@ -127,9 +158,22 @@ func TestByRepositoryImplementsCriteria(t *testing.T) {
 }
 
 func TestByRepositorySetsTheProperFields(t *testing.T) {
-	criteria := search.ByRepository("repositoryId").Parameters()
+	actual := search.ByRepository("repositoryId").Parameters()
+	expected := map[string]string{"repositoryId": "repositoryId"}
 
-	checkMap(t, map[string]string{"repositoryId": "repositoryId"}, criteria)
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
+	}
+
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
+	}
+
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
+	}
 }
 
 func TestInRepositoryImplementsCriteria(t *testing.T) {
@@ -139,16 +183,41 @@ func TestInRepositoryImplementsCriteria(t *testing.T) {
 }
 
 func TestInRepositorySetsTheProperFields(t *testing.T) {
-	criteria := search.InRepository{"repositoryId", search.ByChecksum("sha1")}.Parameters()
+	actual := search.InRepository{"repositoryId", search.ByChecksum("sha1")}.Parameters()
+	expected := map[string]string{"repositoryId": "repositoryId", "sha1": "sha1"}
 
-	checkMap(t, map[string]string{"repositoryId": "repositoryId", "sha1": "sha1"}, criteria)
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
+	}
+
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
+	}
+
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
+	}
 }
 
 func TestInRepositoryWithSearchAllIsTheSameAsByRepository(t *testing.T) {
-	inRepo := search.InRepository{"repositoryId", search.All}.Parameters()
-	byRepo := search.ByRepository("repositoryId").Parameters()
+	actual := search.InRepository{"repositoryId", search.All}.Parameters()
+	expected := search.ByRepository("repositoryId").Parameters()
 
-	checkMap(t, byRepo, inRepo)
+	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+
+	for _, key := range diff {
+		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
+	}
+
+	for _, key := range onlyExpected {
+		t.Errorf("Missing key %q", key)
+	}
+
+	for _, key := range onlyActual {
+		t.Errorf("Unexpected key %q", key)
+	}
 }
 
 // Examples
