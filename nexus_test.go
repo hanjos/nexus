@@ -47,14 +47,14 @@ func ExampleNexus2x_Artifacts() {
 	n := nexus.New("http://maven.java.net", credentials.None)
 
 	// using a simple search
-	artifacts, err := n.Artifacts(search.ByClassname("javax.servlet.Servlet"))
+	n.Artifacts(search.ByClassname("javax.servlet.Servlet"))
 
 	// using a composite search
-	artifacts, err := n.Artifacts(
+	n.Artifacts(
 		search.InRepository{
 			"releases",
 			search.ByKeyword("javax.enterprise")})
 
 	// searching for every artifact in Nexus (WARNING: this can take a LOOONG time - and memory!)
-	artifacts, err := n.Artifacts(search.All)
+	n.Artifacts(search.All)
 }
