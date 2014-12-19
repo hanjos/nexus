@@ -80,6 +80,7 @@ var bfuPairs = []bfuPair{
 	{bfuInput{"http://maven.java.net", "///nexus", map[string]string{}}, "http://maven.java.net/nexus", nil},
 	{bfuInput{"http://maven.java.net////", "/nexus", map[string]string{}}, "http://maven.java.net/nexus", nil},
 	{bfuInput{"http:/maven.java.net", "/nexus", map[string]string{}}, "", reflect.TypeOf(&MalformedUrlError{})},
+	{bfuInput{"http://maven.java.net///", "/nexus", map[string]string{"p": "1"}}, "http://maven.java.net/nexus?p=1", nil},
 	{bfuInput{"http://maven.java.net///", "/nexus", map[string]string{"p": "1", "q": "2"}}, "http://maven.java.net/nexus?p=1&q=2", nil},
 }
 
