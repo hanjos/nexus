@@ -30,7 +30,7 @@ func main() {
   
   artifacts, err := n.Artifacts(
     search.InRepository{ 
-      "shamalamadingdong" 
+      "shamalamadingdong",
       search.ByKeyword("com.sbrubbles*")})
   
   if err != nil {
