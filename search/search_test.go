@@ -58,7 +58,7 @@ func TestByCoordinatesImplementsCriteria(t *testing.T) {
 }
 
 func TestByCoordinatesSetsTheProperFields(t *testing.T) {
-	actual := search.ByCoordinates{GroupId: "g", ArtifactId: "a", Version: "v", Packaging: "p", Classifier: "c"}.Parameters()
+	actual := search.ByCoordinates{GroupID: "g", ArtifactID: "a", Version: "v", Packaging: "p", Classifier: "c"}.Parameters()
 	expected := map[string]string{"g": "g", "a": "a", "v": "v", "p": "p", "c": "c"}
 
 	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
@@ -158,8 +158,8 @@ func TestByRepositoryImplementsCriteria(t *testing.T) {
 }
 
 func TestByRepositorySetsTheProperFields(t *testing.T) {
-	actual := search.ByRepository("repositoryId").Parameters()
-	expected := map[string]string{"repositoryId": "repositoryId"}
+	actual := search.ByRepository("repositoryID").Parameters()
+	expected := map[string]string{"repositoryID": "repositoryID"}
 
 	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
 
@@ -183,8 +183,8 @@ func TestInRepositoryImplementsCriteria(t *testing.T) {
 }
 
 func TestInRepositorySetsTheProperFields(t *testing.T) {
-	actual := search.InRepository{"repositoryId", search.ByChecksum("sha1")}.Parameters()
-	expected := map[string]string{"repositoryId": "repositoryId", "sha1": "sha1"}
+	actual := search.InRepository{"repositoryID", search.ByChecksum("sha1")}.Parameters()
+	expected := map[string]string{"repositoryID": "repositoryID", "sha1": "sha1"}
 
 	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
 
@@ -202,8 +202,8 @@ func TestInRepositorySetsTheProperFields(t *testing.T) {
 }
 
 func TestInRepositoryWithSearchAllIsTheSameAsByRepository(t *testing.T) {
-	actual := search.InRepository{"repositoryId", search.All}.Parameters()
-	expected := search.ByRepository("repositoryId").Parameters()
+	actual := search.InRepository{"repositoryID", search.All}.Parameters()
+	expected := search.ByRepository("repositoryID").Parameters()
 
 	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
 
@@ -237,13 +237,13 @@ func ExampleByKeyword() {
 func ExampleByCoordinates() {
 	n := nexus.New("https://maven.java.net", credentials.None)
 
-	// Returns all artifacts with a groupId starting with com.sun. Due to Go's
+	// Returns all artifacts with a groupID starting with com.sun. Due to Go's
 	// struct syntax, we don't need to specify all the coordinates; they
 	// default to string's zero value (""), which Nexus ignores.
-	n.Artifacts(search.ByCoordinates{GroupId: "com.sun*"})
+	n.Artifacts(search.ByCoordinates{GroupID: "com.sun*"})
 
-	// A coordinate search requires specifying at least either a groupId, an
-	// artifactId or a version. This search will (after some time), return
+	// A coordinate search requires specifying at least either a groupID, an
+	// artifactID or a version. This search will (after some time), return
 	// nothing. This doesn't mean there are no projects with packaging "pom";
 	// this is a limitation of Nexus' search.
 	n.Artifacts(search.ByCoordinates{Packaging: "pom"})
@@ -251,24 +251,24 @@ func ExampleByCoordinates() {
 	// This search may or may not return an error, depending on the version of
 	// the Nexus being accessed. On newer Nexuses (sp?) "*" searches are
 	// invalid.
-	n.Artifacts(search.ByCoordinates{GroupId: "*", Packaging: "pom"})
+	n.Artifacts(search.ByCoordinates{GroupID: "*", Packaging: "pom"})
 
 	// ByCoordinates searches in Maven *projects*, not artifacts. So this
 	// search will return all com.sun* artifacts in projects with packaging
-	// "pom", not all POM artifacts with groupId com.sun*! Packaging is not
+	// "pom", not all POM artifacts with groupID com.sun*! Packaging is not
 	// the same as extension.
-	n.Artifacts(search.ByCoordinates{GroupId: "com*", Packaging: "pom"})
+	n.Artifacts(search.ByCoordinates{GroupID: "com*", Packaging: "pom"})
 }
 
 func ExampleInRepository() {
 	n := nexus.New("https://maven.java.net", credentials.None)
 
-	// Returns all artifacts in the repository releases with groupId starting
+	// Returns all artifacts in the repository releases with groupID starting
 	// with com.sun and whose project has packaging "pom".
 	n.Artifacts(
 		search.InRepository{
 			"releases",
-			search.ByCoordinates{GroupId: "com.sun*", Packaging: "pom"},
+			search.ByCoordinates{GroupID: "com.sun*", Packaging: "pom"},
 		})
 
 	// Nexus doesn't support * in the repository ID parameter, so this search
@@ -276,6 +276,6 @@ func ExampleInRepository() {
 	n.Artifacts(
 		search.InRepository{
 			"releases*",
-			search.ByCoordinates{GroupId: "com.sun*", Packaging: "pom"},
+			search.ByCoordinates{GroupID: "com.sun*", Packaging: "pom"},
 		})
 }

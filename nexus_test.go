@@ -27,7 +27,7 @@ func Example() {
 	}
 
 	// printing out all artifacts which are in a hosted repository, and have
-	// both 'javax.enterprise' in their groupId and a 'sources' classifier.
+	// both 'javax.enterprise' in their groupID and a 'sources' classifier.
 	for _, repo := range repositories {
 		if repo.Type != "hosted" {
 			continue
@@ -35,9 +35,9 @@ func Example() {
 
 		artifacts, err := n.Artifacts(
 			search.InRepository{
-				repo.Id,
+				repo.ID,
 				search.ByCoordinates{
-					GroupId:    "javax.enterprise*",
+					GroupID:    "javax.enterprise*",
 					Classifier: "sources"}})
 
 		if err != nil {

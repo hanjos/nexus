@@ -20,13 +20,13 @@ type Artifact struct {
 
 // String implements the fmt.Stringer interface, as per Maven docs (http://maven.apache.org/pom.html#Maven_Coordinates).
 func (a Artifact) String() string {
-	var parts = []string{a.GroupId, a.ArtifactId, a.Extension}
+	var parts = []string{a.GroupID, a.ArtifactID, a.Extension}
 
 	if a.Classifier != "" {
 		parts = append(parts, a.Classifier)
 	}
 
-	return strings.Join(append(parts, a.Version), ":") + "@" + a.RepositoryId
+	return strings.Join(append(parts, a.Version), ":") + "@" + a.RepositoryID
 }
 
 // DefaultFileName return Maven's default name for this artifact, given its metadata.
@@ -36,13 +36,13 @@ func (a Artifact) DefaultFileName() string {
 		classifier = "-" + a.Classifier
 	}
 
-	return a.ArtifactId + "-" + a.Version + classifier + "." + a.Extension
+	return a.ArtifactID + "-" + a.Version + classifier + "." + a.Extension
 }
 
 // used for the artifact set.
 func (a *Artifact) hash() string {
-	return a.GroupId + ":" + a.ArtifactId + ":" + a.Version + ":" +
-		a.Extension + ":" + a.Classifier + "@" + a.RepositoryId
+	return a.GroupID + ":" + a.ArtifactID + ":" + a.Version + ":" +
+		a.Extension + ":" + a.Classifier + "@" + a.RepositoryID
 }
 
 // since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.
