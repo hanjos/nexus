@@ -18,8 +18,7 @@ type Artifact struct {
 	RepositoryID string // e.g. releases
 }
 
-// String implements the Stringer interface, for easy printing, as per Maven docs
-// (http://maven.apache.org/pom.html#Maven_Coordinates).
+// String implements the fmt.Stringer interface, as per Maven docs (http://maven.apache.org/pom.html#Maven_Coordinates).
 func (a Artifact) String() string {
 	var parts = []string{a.GroupId, a.ArtifactId, a.Extension}
 
@@ -90,7 +89,7 @@ type ArtifactInfo struct {
 	URL         string
 }
 
-// String implements the Stringer interface, for easy printing.
+// String implements the fmt.Stringer interface.
 func (info ArtifactInfo) String() string {
 	return fmt.Sprintf("%v [SHA1 %v, Mime-Type %v, %v]", info.Artifact, info.Sha1, info.MimeType, info.Size)
 }

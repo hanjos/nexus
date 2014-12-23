@@ -10,6 +10,7 @@ import (
 // FileSize represents an amount of bytes.
 type FileSize int64
 
+// Some pre-constructed file size units.
 const (
 	Byte     = FileSize(1)
 	Kilobyte = FileSize(1 << 10)
@@ -17,7 +18,7 @@ const (
 	Gigabyte = FileSize(1 << 30)
 )
 
-// String implements the Stringer interface, for easy printing.
+// String implements the fmt.Stringer interface.
 func (size FileSize) String() string {
 	switch true {
 	case size <= Kilobyte:
@@ -35,21 +36,21 @@ var urlRe = regexp.MustCompile(`^(?P<scheme>[^:]+)://(?P<rest>.+)`)
 var slashesRe = regexp.MustCompile(`//+`)
 
 // Removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
-// Returns an util.MalformedUrlError if the given URL can't be parsed.
+// Returns an util.MalformedURLError if the given URL can't be parsed.
 func cleanSlashes(url string) (string, error) {
 	matches := urlRe.FindStringSubmatch(url)
 	if matches == nil {
-		return "", &MalformedUrlError{url}
+		return "", &MalformedURLError{url}
 	}
 
 	// if we got here, scheme = matches[1] and rest = matches[2]. Clean the extraneous slashes
 	return matches[1] + "://" + slashesRe.ReplaceAllString(matches[2], "/"), nil
 }
 
-// BuildFullUrl builds a complete URL string in the format host/path?query, where query's keys and values will be
-// formatted as k=v. Returns an util.MalformedUrlError if the given URL can't be parsed. This function is a (very)
+// BuildFullURL builds a complete URL string in the format host/path?query, where query's keys and values will be
+// formatted as k=v. Returns an util.MalformedURLError if the given URL can't be parsed. This function is a (very)
 // simplified version of url.URL.String().
-func BuildFullUrl(host string, path string, query map[string]string) (string, error) {
+func BuildFullURL(host string, path string, query map[string]string) (string, error) {
 	params := []string{}
 
 	for k, v := range query {
@@ -58,16 +59,17 @@ func BuildFullUrl(host string, path string, query map[string]string) (string, er
 
 	if len(params) == 0 {
 		return cleanSlashes(host + "/" + path)
-	} else {
-		return cleanSlashes(host + "/" + path + "?" + strings.Join(params, "&"))
 	}
+
+	return cleanSlashes(host + "/" + path + "?" + strings.Join(params, "&"))
 }
 
-// MalformedUrlError is returned when the given URL could not be parsed.
-type MalformedUrlError struct {
-	Url string // e.g. http:/:malformed.url.com
+// MalformedURLError is returned when the given URL could not be parsed.
+type MalformedURLError struct {
+	URL string // e.g. http:/:malformed.url.com
 }
 
-func (err MalformedUrlError) Error() string {
-	return fmt.Sprintf("Malformed URL: %v", err.Url)
+// Error implements the error interface.
+func (err MalformedURLError) Error() string {
+	return fmt.Sprintf("Malformed URL: %v", err.URL)
 }

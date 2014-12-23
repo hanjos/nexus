@@ -20,7 +20,7 @@ var cleanSlashesErr = []struct {
 	input    string
 	expected reflect.Type
 }{
-	{"http:/maven.java.net", reflect.TypeOf(&MalformedUrlError{})},
+	{"http:/maven.java.net", reflect.TypeOf(&MalformedURLError{})},
 }
 
 func TestCleanSlashes(t *testing.T) {
@@ -66,12 +66,12 @@ var bfuErr = []struct {
 
 	expected reflect.Type
 }{
-	{"http:/maven.java.net", "/nexus", map[string]string{}, reflect.TypeOf(&MalformedUrlError{})},
+	{"http:/maven.java.net", "/nexus", map[string]string{}, reflect.TypeOf(&MalformedURLError{})},
 }
 
-func TestBuildFullUrl(t *testing.T) {
+func TestBuildFullURL(t *testing.T) {
 	for _, p := range bfuOk {
-		actual, err := BuildFullUrl(p.host, p.path, p.query)
+		actual, err := BuildFullURL(p.host, p.path, p.query)
 
 		if err != nil {
 			t.Errorf("expected %v, got an error %v", p.expected, err)
@@ -81,7 +81,7 @@ func TestBuildFullUrl(t *testing.T) {
 	}
 
 	for _, p := range bfuErr {
-		actual, err := BuildFullUrl(p.host, p.path, p.query)
+		actual, err := BuildFullURL(p.host, p.path, p.query)
 
 		if actual != "" {
 			t.Errorf("expected an error %v, got a value %v", p.expected, actual)
@@ -91,9 +91,9 @@ func TestBuildFullUrl(t *testing.T) {
 	}
 }
 
-func TestIfMalformedUrlErrorIsError(t *testing.T) {
+func TestIfMalformedURLErrorIsError(t *testing.T) {
 	// type assertion only works on interface types, so...
-	if _, ok := interface{}(&MalformedUrlError{}).(error); !ok {
-		t.Errorf("util.MalformedUrlError does not implement the error interface!")
+	if _, ok := interface{}(&MalformedURLError{}).(error); !ok {
+		t.Errorf("util.MalformedURLError does not implement the error interface!")
 	}
 }

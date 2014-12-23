@@ -18,10 +18,12 @@ const All = noCriteria(true)
 // there's no reason for more than one value to exist, so it's unexported and made bool for Go to allow a const.
 type noCriteria bool
 
+// Parameters implements the search.Criteria interface.
 func (empty noCriteria) Parameters() map[string]string {
 	return map[string]string{}
 }
 
+// String implements the fmt.Stringer interface.
 func (empty noCriteria) String() string {
 	return "search.All"
 }
@@ -39,21 +41,22 @@ func OrZero(c Criteria) Criteria {
 // ByCoordinates searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates). Nexus'
 // search by coordinates has certain issues and peculiarities, some shown in the examples below.
 type ByCoordinates struct {
-	GroupId    string // e.g. com.atlassian.maven.plugins
-	ArtifactId string // e.g. maven-jgitflow-plugin
+	GroupID    string // e.g. com.atlassian.maven.plugins
+	ArtifactID string // e.g. maven-jgitflow-plugin
 	Version    string // e.g. 1.0-alpha27, 2.0.0-SNAPSHOT...
 	Classifier string // e.g. sources, javadoc, jdk15...
 	Packaging  string // e.g. maven-plugin, ear, war, jar, pom...
 }
 
+// Parameters implements the search.Criteria interface.
 func (gav ByCoordinates) Parameters() map[string]string {
 	result := map[string]string{}
 
-	if gav.GroupId != "" {
-		result["g"] = gav.GroupId
+	if gav.GroupID != "" {
+		result["g"] = gav.GroupID
 	}
-	if gav.ArtifactId != "" {
-		result["a"] = gav.ArtifactId
+	if gav.ArtifactID != "" {
+		result["a"] = gav.ArtifactID
 	}
 	if gav.Version != "" {
 		result["v"] = gav.Version
@@ -68,14 +71,15 @@ func (gav ByCoordinates) Parameters() map[string]string {
 	return result
 }
 
+// String implements the fmt.Stringer interface.
 func (gav ByCoordinates) String() string {
 	str := []string{}
 
-	if gav.GroupId != "" {
-		str = append(str, "g: "+gav.GroupId)
+	if gav.GroupID != "" {
+		str = append(str, "g: "+gav.GroupID)
 	}
-	if gav.ArtifactId != "" {
-		str = append(str, "a: "+gav.ArtifactId)
+	if gav.ArtifactID != "" {
+		str = append(str, "a: "+gav.ArtifactID)
 	}
 	if gav.Version != "" {
 		str = append(str, "v: "+gav.Version)
@@ -93,12 +97,14 @@ func (gav ByCoordinates) String() string {
 // ByKeyword searches by keywords.
 type ByKeyword string
 
+// Parameters implements the search.Criteria interface.
 func (q ByKeyword) Parameters() map[string]string {
 	return map[string]string{
 		"q": string(q),
 	}
 }
 
+// String implements the fmt.Stringer interface.
 func (q ByKeyword) String() string {
 	return "search.ByKeyword(" + string(q) + ")"
 }
@@ -106,12 +112,14 @@ func (q ByKeyword) String() string {
 // ByClassname searches by class name.
 type ByClassname string
 
+// Parameters implements the search.Criteria interface.
 func (cn ByClassname) Parameters() map[string]string {
 	return map[string]string{
 		"cn": string(cn),
 	}
 }
 
+// String implements the fmt.Stringer interface.
 func (cn ByClassname) String() string {
 	return "search.ByClassname(" + string(cn) + ")"
 }
@@ -119,12 +127,14 @@ func (cn ByClassname) String() string {
 // ByChecksum searches by SHA1 checksum.
 type ByChecksum string
 
+// Parameters implements the search.Criteria interface.
 func (sha1 ByChecksum) Parameters() map[string]string {
 	return map[string]string{
 		"sha1": string(sha1),
 	}
 }
 
+// String implements the fmt.Stringer interface.
 func (sha1 ByChecksum) String() string {
 	return "search.ByChecksum(" + string(sha1) + ")"
 }
@@ -132,30 +142,34 @@ func (sha1 ByChecksum) String() string {
 // ByRepository searches for all artifacts in the given repository ID.
 type ByRepository string
 
+// Parameters implements the search.Criteria interface.
 func (byRepo ByRepository) Parameters() map[string]string {
 	return map[string]string{
-		"repositoryId": string(byRepo),
+		"repositoryID": string(byRepo),
 	}
 }
 
+// String implements the fmt.Stringer interface.
 func (byRepo ByRepository) String() string {
 	return "search.ByRepository(" + string(byRepo) + ")"
 }
 
 // InRepository searches for all artifacts in the given repository ID following the given criteria.
 type InRepository struct {
-	RepositoryId string
+	RepositoryID string
 
 	Criteria
 }
 
+// Parameters implements the search.Criteria interface.
 func (inRepo InRepository) Parameters() map[string]string {
 	params := inRepo.Criteria.Parameters()
-	params["repositoryId"] = inRepo.RepositoryId
+	params["repositoryID"] = inRepo.RepositoryID
 
 	return params
 }
 
+// String implements the fmt.Stringer interface.
 func (inRepo InRepository) String() string {
-	return "search.InRepository(" + inRepo.RepositoryId + ", " + fmt.Sprintf("%v", inRepo.Criteria) + ")"
+	return "search.InRepository(" + inRepo.RepositoryID + ", " + fmt.Sprintf("%v", inRepo.Criteria) + ")"
 }

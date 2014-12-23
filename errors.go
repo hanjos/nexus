@@ -16,6 +16,7 @@ type Error struct {
 	Message    string // e.g. Error (400 Bad response) from http://nexus.somewhere.com
 }
 
+// Error implements the error interface.
 func (err Error) Error() string {
 	return err.Message
 }
@@ -77,7 +78,8 @@ func tryFromJSON(body []byte) (string, error) {
 	return errorResponse.Errors[0].Msg, nil
 }
 
-// yes, I'm using a regex instead of a parser, sue me :) All I wanted was an html.Unmarshaller...
+// yes, I'm using a regex instead of a parser, sue me :)
+// All I wanted was an html.Unmarshaller...
 var pRe = regexp.MustCompile(`<p>([^<]*)</p>`)
 
 // Tries to extract the error message from an HTML response. Sometimes it happens...
