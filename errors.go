@@ -10,7 +10,7 @@ import (
 
 // Error is returned when there's an error on an attempt to access Nexus.
 type Error struct {
-	Url        string // e.g. http://nexus.somewhere.com
+	URL        string // e.g. http://nexus.somewhere.com
 	StatusCode int    // e.g. 400
 	Status     string // e.g. 400 Bad response
 	Message    string // e.g. Error (400 Bad response) from http://nexus.somewhere.com
@@ -23,10 +23,10 @@ func (err Error) Error() string {
 // Nexus' API returns error messages sometimes; this function is an attempt to capture and return them to the caller.
 func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
 	e := Error{
-		Url:        nexus.Url,
+		URL:        nexus.URL,
 		StatusCode: response.StatusCode,
 		Status:     response.Status,
-		Message:    fmt.Sprintf("Error (%v) from %v", response.Status, nexus.Url),
+		Message:    fmt.Sprintf("Error (%v) from %v", response.Status, nexus.URL),
 	}
 
 	body, err := bodyToBytes(response.Body)

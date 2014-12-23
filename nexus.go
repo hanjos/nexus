@@ -30,24 +30,24 @@ type Client interface {
 
 // Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
 type Nexus2x struct {
-	Url         string                  // e.g. http://nexus.somewhere.com:8080/nexus
+	URL         string                  // e.g. http://nexus.somewhere.com:8080/nexus
 	Credentials credentials.Credentials // e.g. credentials.BasicAuth{"username", "password"}
-	HttpClient  *http.Client            // the network client
+	HTTPClient  *http.Client            // the network client
 }
 
 // New creates a new Nexus client, using the default Client implementation.
 func New(url string, c credentials.Credentials) Client {
-	return &Nexus2x{Url: url, Credentials: credentials.OrZero(c), HttpClient: &http.Client{}}
+	return &Nexus2x{URL: url, Credentials: credentials.OrZero(c), HTTPClient: &http.Client{}}
 }
 
 // does the actual legwork, going to Nexus and validating the response.
 func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response, error) {
-	fullUrl, err := util.BuildFullUrl(nexus.Url, path, query)
+	fullURL, err := util.BuildFullURL(nexus.URL, path, query)
 	if err != nil {
 		return nil, err
 	}
 
-	get, err := http.NewRequest("GET", fullUrl, nil)
+	get, err := http.NewRequest("GET", fullURL, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -56,7 +56,7 @@ func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response
 	get.Header.Add("Accept", "application/json")
 
 	// go for it!
-	response, err := nexus.HttpClient.Do(get)
+	response, err := nexus.HTTPClient.Do(get)
 	if err != nil {
 		return nil, err
 	}
@@ -66,7 +66,7 @@ func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response
 	switch {
 	case status == http.StatusUnauthorized:
 		// the credentials don't check out
-		return nil, &credentials.Error{fullUrl, nexus.Credentials}
+		return nil, &credentials.Error{fullURL, nexus.Credentials}
 	case 400 <= status && status < 600:
 		// Nexus complained, so error out
 		return nil, nexus.errorFromResponse(response)
@@ -101,8 +101,8 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	}
 
 	if len(params) == 1 {
-		if repoId, ok := params["repositoryId"]; ok { // all in repo search
-			return nexus.fetchArtifactsFrom(repoId)
+		if repoID, ok := params["repositoryID"]; ok { // all in repo search
+			return nexus.fetchArtifactsFrom(repoID)
 		}
 	}
 
@@ -112,11 +112,11 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 type artifactSearchResponse struct {
 	TotalCount int
 	Data       []struct {
-		GroupId      string
-		ArtifactId   string
+		GroupID      string
+		ArtifactID   string
 		Version      string
 		ArtifactHits []struct {
-			RepositoryId  string
+			RepositoryID  string
 			ArtifactLinks []struct {
 				Extension  string
 				Classifier string
@@ -129,12 +129,12 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 	var artifacts = []*Artifact{}
 
 	for _, artifact := range payload.Data {
-		g := artifact.GroupId
-		a := artifact.ArtifactId
+		g := artifact.GroupID
+		a := artifact.ArtifactID
 		v := artifact.Version
 
 		for _, hit := range artifact.ArtifactHits {
-			r := hit.RepositoryId
+			r := hit.RepositoryID
 			for _, link := range hit.ArtifactLinks {
 				e := link.Extension
 				c := link.Classifier
@@ -227,9 +227,9 @@ func filterPoms(artifacts []*Artifact, filter map[string]string) []*Artifact {
 }
 
 // returns the first-level directories in the given repository.
-func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryId string) ([]string, error) {
+func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryID string) ([]string, error) {
 	// XXX Don't forget the ending /, or the response is always XML!
-	resp, err := nexus.fetch("service/local/repositories/"+repositoryId+"/content/", nil)
+	resp, err := nexus.fetch("service/local/repositories/"+repositoryID+"/content/", nil)
 	if err != nil {
 		return nil, err
 	}
@@ -265,16 +265,16 @@ func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryId string) ([]string, error
 }
 
 // returns all artifacts in the given repository.
-func (nexus Nexus2x) fetchArtifactsFrom(repositoryId string) ([]*Artifact, error) {
+func (nexus Nexus2x) fetchArtifactsFrom(repositoryID string) ([]*Artifact, error) {
 	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
 	// artifacts in a given repository by searching for *. This has been disabled in the newer versions, without any
 	// official alternative for "give me everything you have". So, the solution adopted here is:
-	// 1) get the first level directories in repositoryId
-	// 2) for every directory 'dir', do a search filtering for the groupId 'dir*' and the repository ID
+	// 1) get the first level directories in repositoryID
+	// 2) for every directory 'dir', do a search filtering for the groupID 'dir*' and the repository ID
 	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the results in common* appear also in com*)
 
 	// 1)
-	dirs, err := nexus.fetchFirstLevelDirsOf(repositoryId)
+	dirs, err := nexus.fetchFirstLevelDirsOf(repositoryID)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +283,7 @@ func (nexus Nexus2x) fetchArtifactsFrom(repositoryId string) ([]*Artifact, error
 	return concurrentArtifactSearch(
 		dirs,
 		func(datum string) ([]*Artifact, error) {
-			return nexus.fetchArtifactsWhere(map[string]string{"g": datum + "*", "repositoryId": repositoryId})
+			return nexus.fetchArtifactsWhere(map[string]string{"g": datum + "*", "repositoryID": repositoryID})
 		})
 }
 
@@ -298,7 +298,7 @@ func (nexus Nexus2x) fetchAllArtifacts() ([]*Artifact, error) {
 	// all we need for the search is the IDs
 	ids := make([]string, len(repos))
 	for i, repo := range repos {
-		ids[i] = repo.Id
+		ids[i] = repo.ID
 	}
 
 	return concurrentArtifactSearch(
@@ -316,7 +316,7 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	}
 
 	// now we can reliably build the proper URL
-	resp, err := nexus.fetch("service/local/repositories/"+artifact.RepositoryId+"/content"+path,
+	resp, err := nexus.fetch("service/local/repositories/"+artifact.RepositoryID+"/content"+path,
 		map[string]string{"describe": "info"})
 	if err != nil {
 		return nil, err
@@ -339,12 +339,12 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 	resp, err := nexus.fetch("service/local/artifact/maven/resolve",
 		map[string]string{
-			"g": artifact.GroupId,
-			"a": artifact.ArtifactId,
+			"g": artifact.GroupID,
+			"a": artifact.ArtifactID,
 			"v": artifact.Version,
 			"e": artifact.Extension,
 			"c": artifact.Classifier,
-			"r": artifact.RepositoryId,
+			"r": artifact.RepositoryID,
 		})
 	if err != nil {
 		return "", err
@@ -378,8 +378,8 @@ type infoSearchResponse struct {
 		Size         int64
 		Sha1Hash     string
 		Repositories []struct {
-			RepositoryId string
-			ArtifactUrl  string
+			RepositoryID string
+			ArtifactURL  string
 		}
 	}
 }
@@ -387,8 +387,8 @@ type infoSearchResponse struct {
 func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactInfo {
 	url := ""
 	for _, repo := range payload.Data.Repositories {
-		if repo.RepositoryId == artifact.RepositoryId {
-			url = repo.ArtifactUrl
+		if repo.RepositoryID == artifact.RepositoryID {
+			url = repo.ArtifactURL
 			break
 		}
 	}
@@ -401,7 +401,7 @@ func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactI
 		Sha1:        payload.Data.Sha1Hash,
 		Size:        util.FileSize(payload.Data.Size),
 		MimeType:    payload.Data.MimeType,
-		Url:         url,
+		URL:         url,
 	}
 }
 
@@ -428,12 +428,12 @@ func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 
 type repoSearchResponse struct {
 	Data []struct {
-		Id         string
+		ID         string
 		Name       string
 		RepoType   string
 		RepoPolicy string
 		Format     string
-		RemoteUri  string
+		RemoteURI  string
 	}
 }
 
@@ -442,12 +442,12 @@ func extractReposFrom(payload *repoSearchResponse) []*Repository {
 
 	for _, repo := range payload.Data {
 		newRepo := &Repository{
-			Id:        repo.Id,
+			ID:        repo.ID,
 			Name:      repo.Name,
 			Type:      repo.RepoType,
 			Format:    repo.Format,
 			Policy:    repo.RepoPolicy,
-			RemoteURI: repo.RemoteUri,
+			RemoteURI: repo.RemoteURI,
 		}
 
 		result = append(result, newRepo)

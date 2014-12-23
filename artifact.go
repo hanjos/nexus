@@ -10,12 +10,12 @@ import (
 
 // Artifact is a Maven coordinate to a single artifact, plus the repository where it came from.
 type Artifact struct {
-	GroupId      string // e.g. org.springframework
-	ArtifactId   string // e.g. spring-core
+	GroupID      string // e.g. org.springframework
+	ArtifactID   string // e.g. spring-core
 	Version      string // e.g. 4.1.3.RELEASE
 	Classifier   string // e.g. sources, javadoc, <the empty string>...
 	Extension    string // e.g. jar
-	RepositoryId string // e.g. releases
+	RepositoryID string // e.g. releases
 }
 
 // String implements the Stringer interface, for easy printing, as per Maven docs
@@ -87,7 +87,7 @@ type ArtifactInfo struct {
 	Sha1        string
 	Size        util.FileSize
 	MimeType    string
-	Url         string
+	URL         string
 }
 
 // String implements the Stringer interface, for easy printing.

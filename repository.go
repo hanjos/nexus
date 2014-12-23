@@ -1,9 +1,9 @@
 package nexus
 
-// A Nexus repository. Nexus actually provides a bit more data, but this should be enough for most uses. Groups aren't
-// considered repositories by Nexus' API; there's a separate call for them.
+// Repository is a non-group Nexus repository. Nexus actually provides a bit more data, but this should be enough for
+// most uses. Groups aren't considered repositories by Nexus' API; there's a separate call for them.
 type Repository struct {
-	Id        string // e.g. releases
+	ID        string // e.g. releases
 	Name      string // e.g. Releases
 	Type      string // e.g. hosted, proxy, virtual...
 	Format    string // e.g. maven2, maven1...
@@ -20,7 +20,7 @@ func (repo Repository) String() string {
 		uri = ""
 	}
 
-	return repo.Id + " ('" + repo.Name + "'){ " +
+	return repo.ID + " ('" + repo.Name + "'){ " +
 		repo.Type + ", " + repo.Format + " format, " +
 		repo.Policy + " policy" + uri + " }"
 }
