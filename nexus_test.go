@@ -1,12 +1,20 @@
 package nexus_test
 
 import (
-	"fmt"
 	"github.com/hanjos/nexus"
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
+
+	"fmt"
 	"reflect"
+	"testing"
 )
+
+func TestNexus2xImplementsClient(t *testing.T) {
+	if _, ok := interface{}(nexus.Nexus2x{}).(nexus.Client); !ok {
+		t.Errorf("nexus.Nexus2x does not implement nexus.Client!")
+	}
+}
 
 func Example() {
 	n := nexus.New("https://maven.java.net", credentials.None)
