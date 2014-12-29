@@ -156,9 +156,9 @@ func (byRepo ByRepository) String() string {
 
 // InRepository searches for all artifacts in the given repository ID following the given criteria.
 type InRepository struct {
-	RepositoryID string
+	RepositoryID string // e.g. releases
 
-	Criteria
+	Criteria Criteria // e.g. search.ByKeyword("javax.enterprise")
 }
 
 // Parameters implements the search.Criteria interface.

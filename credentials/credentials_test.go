@@ -1,8 +1,8 @@
 package credentials_test
 
 import (
-	"testing"
 	"github.com/hanjos/nexus/credentials"
+	"testing"
 )
 
 func TestNoneSignDoesntBarfOnNil(t *testing.T) {

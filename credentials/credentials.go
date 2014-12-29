@@ -11,7 +11,8 @@ import (
 
 // Credentials is satisfied by whoever can configure an http.Request properly.
 type Credentials interface {
-	// Adds a set of credentials to an http.Request for authorization. Does nothing on nil requests.
+	// Adds a set of credentials to an http.Request for authorization.
+	// Does nothing on nil requests.
 	Sign(request *http.Request)
 }
 
