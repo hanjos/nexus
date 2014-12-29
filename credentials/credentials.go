@@ -1,5 +1,5 @@
 /*
-Package credentials provides an http.Request with a set of credentials. Some Nexus API calls can only be done by users
+Package credentials provides a set of credentials to an http.Request. Some Nexus API calls can only be done by users
 with the proper authorization.
 */
 package credentials
@@ -11,7 +11,7 @@ import (
 
 // Credentials is satisfied by whoever can configure an http.Request properly.
 type Credentials interface {
-	// Provides an http.Request with a set of credentials for authorization.
+	// Adds a set of credentials to an http.Request for authorization. Does nothing on nil requests.
 	Sign(request *http.Request)
 }
 
@@ -23,6 +23,10 @@ type noCredentials bool
 
 // Sign implements the Credentials interface, removing Authorization data from the header.
 func (auth noCredentials) Sign(request *http.Request) {
+	if request == nil {
+		return
+	}
+
 	request.Header.Del("Authorization")
 }
 
@@ -49,6 +53,10 @@ type BasicAuth struct {
 
 // Sign implements the Credentials interface, signing the header using HTTP Basic Authentication.
 func (auth BasicAuth) Sign(request *http.Request) {
+	if request == nil {
+		return
+	}
+
 	request.SetBasicAuth(auth.Username, auth.Password)
 }
 
@@ -65,5 +73,6 @@ type Error struct {
 
 // Error implements the error interface.
 func (err Error) Error() string {
+	// err.Credentials may not implement fmt.Stringer, so fmt.Sprintf is safer to use
 	return fmt.Sprintf("%v doesn't have access to %v", err.Credentials, err.URL)
 }
