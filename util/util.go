@@ -7,28 +7,29 @@ import (
 	"strings"
 )
 
-// FileSize represents an amount of bytes.
-type FileSize int64
+// ByteSize represents an amount of bytes. float64 is needed since division
+// is required.
+type ByteSize float64
 
 // Some pre-constructed file size units.
 const (
-	Byte     = FileSize(1)
-	Kilobyte = FileSize(1 << 10)
-	Megabyte = FileSize(1 << 20)
-	Gigabyte = FileSize(1 << 30)
+	Byte ByteSize = 1 << (10 * iota)
+	Kilobyte
+	Megabyte
+	Gigabyte
 )
 
 // String implements the fmt.Stringer interface.
-func (size FileSize) String() string {
-	switch true {
+func (size ByteSize) String() string {
+	switch {
 	case size <= Kilobyte:
-		return fmt.Sprintf("%d B", int(size))
+		return fmt.Sprintf("%d B", size)
 	case size <= Megabyte:
-		return fmt.Sprintf("%.2f KB", float64(size)/float64(Kilobyte))
+		return fmt.Sprintf("%.2f KB", size/Kilobyte)
 	case size <= Gigabyte:
-		return fmt.Sprintf("%.2f MB", float64(size)/float64(Megabyte))
+		return fmt.Sprintf("%.2f MB", size/Megabyte)
 	default:
-		return fmt.Sprintf("%.2f GB", float64(size)/float64(Gigabyte))
+		return fmt.Sprintf("%.2f GB", size/Gigabyte)
 	}
 }
 

@@ -84,7 +84,7 @@ type ArtifactInfo struct {
 	Uploaded    time.Time
 	LastChanged time.Time
 	Sha1        string
-	Size        util.FileSize
+	Size        util.ByteSize
 	MimeType    string
 	URL         string
 }

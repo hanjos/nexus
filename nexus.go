@@ -399,7 +399,7 @@ func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactI
 		Uploaded:    time.Unix(payload.Data.Uploaded, 0),
 		LastChanged: time.Unix(payload.Data.LastChanged, 0),
 		Sha1:        payload.Data.Sha1Hash,
-		Size:        util.FileSize(payload.Data.Size),
+		Size:        util.ByteSize(payload.Data.Size),
 		MimeType:    payload.Data.MimeType,
 		URL:         url,
 	}
