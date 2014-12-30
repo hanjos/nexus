@@ -45,18 +45,35 @@ func TestCleanSlashes(t *testing.T) {
 	}
 }
 
+type stringSet map[string]bool
+
+func oneOf(args ...string) stringSet {
+	set := map[string]bool{}
+
+	for _, k := range args {
+		set[k] = true
+	}
+
+	return set
+}
+
 var bfuOk = []struct {
 	host  string
 	path  string
 	query map[string]string
 
-	expected string
+	expected stringSet
 }{
-	{"http://maven.java.net", "nexus", map[string]string{}, "http://maven.java.net/nexus"},
-	{"http://maven.java.net", "///nexus", map[string]string{}, "http://maven.java.net/nexus"},
-	{"http://maven.java.net////", "/nexus", map[string]string{}, "http://maven.java.net/nexus"},
-	{"http://maven.java.net///", "/nexus", map[string]string{"p": "1"}, "http://maven.java.net/nexus?p=1"},
-	{"http://maven.java.net///", "/nexus", map[string]string{"p": "1", "q": "2"}, "http://maven.java.net/nexus?p=1&q=2"},
+	{"http://maven.java.net", "nexus", map[string]string{},
+		oneOf("http://maven.java.net/nexus")},
+	{"http://maven.java.net", "///nexus", map[string]string{},
+		oneOf("http://maven.java.net/nexus")},
+	{"http://maven.java.net////", "/nexus", map[string]string{},
+		oneOf("http://maven.java.net/nexus")},
+	{"http://maven.java.net///", "/nexus", map[string]string{"p": "1"},
+		oneOf("http://maven.java.net/nexus?p=1")},
+	{"http://maven.java.net///", "/nexus", map[string]string{"p": "1", "q": "2"},
+		oneOf("http://maven.java.net/nexus?p=1&q=2", "http://maven.java.net/nexus?p=1&q=2")},
 }
 
 var bfuErr = []struct {
@@ -75,7 +92,7 @@ func TestBuildFullURL(t *testing.T) {
 
 		if err != nil {
 			t.Errorf("expected %v, got an error %v", p.expected, err)
-		} else if actual != p.expected {
+		} else if _, ok := p.expected[actual]; !ok {
 			t.Errorf("expected %v, got %v", p.expected, actual)
 		}
 	}
