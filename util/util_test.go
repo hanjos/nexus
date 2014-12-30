@@ -73,7 +73,7 @@ var bfuOk = []struct {
 	{"http://maven.java.net///", "/nexus", map[string]string{"p": "1"},
 		oneOf("http://maven.java.net/nexus?p=1")},
 	{"http://maven.java.net///", "/nexus", map[string]string{"p": "1", "q": "2"},
-		oneOf("http://maven.java.net/nexus?p=1&q=2", "http://maven.java.net/nexus?p=1&q=2")},
+		oneOf("http://maven.java.net/nexus?p=1&q=2", "http://maven.java.net/nexus?q=2&p=1")},
 }
 
 var bfuErr = []struct {
