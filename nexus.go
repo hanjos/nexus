@@ -31,7 +31,7 @@ type Client interface {
 // Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
 type Nexus2x struct {
 	URL         string                  // e.g. http://nexus.somewhere.com:8080/nexus
-	Credentials credentials.Credentials // e.g. credentials.BasicAuth{"username", "password"}
+	Credentials credentials.Credentials // e.g. credentials.BasicAuth("username", "password")
 	HTTPClient  *http.Client            // the network client
 }
 
@@ -66,7 +66,7 @@ func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response
 	switch {
 	case status == http.StatusUnauthorized:
 		// the credentials don't check out
-		return nil, &credentials.Error{fullURL, nexus.Credentials}
+		return nil, &credentials.Error{URL: fullURL, Credentials: nexus.Credentials}
 	case 400 <= status && status < 600:
 		// Nexus complained, so error out
 		return nil, nexus.errorFromResponse(response)

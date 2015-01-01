@@ -63,7 +63,7 @@ func (auth basicAuth) Sign(request *http.Request) {
 }
 
 func (auth basicAuth) String() string {
-	return "BasicAuth{" + auth.Username + ", ***}"
+	return "BasicAuth(" + auth.Username + ", ***)"
 }
 
 // Error is returned when the given credentials aren't authorized to reach the given URL.
