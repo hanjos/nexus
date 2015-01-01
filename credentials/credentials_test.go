@@ -13,13 +13,13 @@ func TestNoneImplementsCredentials(t *testing.T) {
 }
 
 func TestBasicAuthImplementsCredentials(t *testing.T) {
-	if _, ok := interface{}(credentials.BasicAuth{"", ""}).(credentials.Credentials); !ok {
+	if _, ok := interface{}(credentials.BasicAuth("", "")).(credentials.Credentials); !ok {
 		t.Errorf("credentials.None doesn't implement credentials.Credentials!")
 	}
 }
 
 func TestOrZeroReturnsTheGivenNonNilArgument(t *testing.T) {
-	c := credentials.BasicAuth{"", ""}
+	c := credentials.BasicAuth("", "")
 	if v := credentials.OrZero(c); v != c {
 		t.Errorf("credentials.OrZero(%v) should've returned %v, not %v!", c, c, v)
 	}
@@ -48,7 +48,7 @@ func TestBasicAuthSignDoesntBarfOnNil(t *testing.T) {
 		}
 	}()
 
-	credentials.BasicAuth{"u", "p"}.Sign(nil)
+	credentials.BasicAuth("u", "p").Sign(nil)
 }
 
 func TestBasicAuthAddAuthorizationDataToTheRequest(t *testing.T) {
@@ -62,7 +62,7 @@ func TestBasicAuthAddAuthorizationDataToTheRequest(t *testing.T) {
 		t.Errorf("Expected no values associated with a newly created request, got %v", req.Header.Get("Authorization"))
 	}
 
-	credentials.BasicAuth{"username", "password"}.Sign(req)
+	credentials.BasicAuth("username", "password").Sign(req)
 
 	if req.Header.Get("Authorization") != "Basic dXNlcm5hbWU6cGFzc3dvcmQ=" {
 		t.Errorf("Expected Basic dXNlcm5hbWU6cGFzc3dvcmQ=, got %v", req.Header.Get("Authorization"))

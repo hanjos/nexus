@@ -47,13 +47,17 @@ func OrZero(c Credentials) Credentials {
 }
 
 // BasicAuth signs the header using HTTP Basic Authentication.
-type BasicAuth struct {
+type basicAuth struct {
 	Username string
 	Password string
 }
 
+func BasicAuth(username, password string) Credentials {
+	return basicAuth{Username: username, Password: password}
+}
+
 // Sign implements the Credentials interface, signing the header using HTTP Basic Authentication.
-func (auth BasicAuth) Sign(request *http.Request) {
+func (auth basicAuth) Sign(request *http.Request) {
 	if request == nil {
 		return
 	}
@@ -62,7 +66,7 @@ func (auth BasicAuth) Sign(request *http.Request) {
 }
 
 // String implements the fmt.Stringer interface.
-func (auth BasicAuth) String() string {
+func (auth basicAuth) String() string {
 	return "BasicAuth{" + auth.Username + ", ***}"
 }
 

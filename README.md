@@ -1,7 +1,7 @@
-A Go library to pull data from a [Sonatype Nexus](http://www.sonatype.com/nexus) instance. 
+A Go library to pull data from a [Sonatype Nexus](http://www.sonatype.com/nexus) instance.
 
 [![TravisCI](https://travis-ci.org/hanjos/nexus.svg)](https://travis-ci.org/hanjos/nexus)
-[![GoDoc](https://godoc.org/github.com/hanjos/nexus?status.svg)](https://godoc.org/github.com/hanjos/nexus) 
+[![GoDoc](https://godoc.org/github.com/hanjos/nexus?status.svg)](https://godoc.org/github.com/hanjos/nexus)
 
 How?
 ----
@@ -26,13 +26,13 @@ import (
 )
 
 func main() {
-  n := nexus.New("http://nexus.somewhere.com", credentials.BasicAuth{"username", "password"})
-  
+  n := nexus.New("http://nexus.somewhere.com", credentials.BasicAuth("username", "password"))
+
   artifacts, err := n.Artifacts(
-    search.InRepository{ 
+    search.InRepository{
       "shamalamadingdong",
       search.ByKeyword("com.sbrubbles*")})
-  
+
   if err != nil {
     fmt.Printf("%v: %v", reflect.TypeOf(err), err)
   }
@@ -46,8 +46,8 @@ func main() {
 Why?
 ----
 
-Nexus has a large REST API, but some information isn't readily available, requiring several API calls and some mashing 
-up to produce. 
+Nexus has a large REST API, but some information isn't readily available, requiring several API calls and some mashing
+up to produce.
 
 And it was a good excuse to try Go out :)
 
