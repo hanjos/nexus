@@ -12,12 +12,6 @@ func TestNoneImplementsCredentials(t *testing.T) {
 	}
 }
 
-func TestBasicAuthImplementsCredentials(t *testing.T) {
-	if _, ok := interface{}(credentials.BasicAuth("", "")).(credentials.Credentials); !ok {
-		t.Errorf("credentials.None doesn't implement credentials.Credentials!")
-	}
-}
-
 func TestOrZeroReturnsTheGivenNonNilArgument(t *testing.T) {
 	c := credentials.BasicAuth("", "")
 	if v := credentials.OrZero(c); v != c {

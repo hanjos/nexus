@@ -1,5 +1,5 @@
 /*
-Package credentials provides a set of credentials to an http.Request. Some Nexus API calls can only be done by users
+Package credentials provides credentials to an http.Request. Some Nexus API calls can only be done by users
 with the proper authorization.
 */
 package credentials
@@ -9,7 +9,7 @@ import (
 	"net/http"
 )
 
-// Credentials is satisfied by whoever can configure an http.Request properly.
+// Credentials represents credentials which can be provided to an http.Request.
 type Credentials interface {
 	// Adds a set of credentials to an http.Request for authorization.
 	// Does nothing on nil requests.
@@ -22,7 +22,6 @@ const None = noCredentials(true)
 // bool trick for Go to allow a const
 type noCredentials bool
 
-// Sign implements the Credentials interface, removing Authorization data from the header.
 func (auth noCredentials) Sign(request *http.Request) {
 	if request == nil {
 		return
@@ -31,7 +30,6 @@ func (auth noCredentials) Sign(request *http.Request) {
 	request.Header.Del("Authorization")
 }
 
-// String implements the fmt.Stringer interface.
 func (auth noCredentials) String() string {
 	return "No credentials"
 }
@@ -46,17 +44,16 @@ func OrZero(c Credentials) Credentials {
 	return c
 }
 
-// BasicAuth signs the header using HTTP Basic Authentication.
 type basicAuth struct {
 	Username string
 	Password string
 }
 
+// BasicAuth returns a Credentials which signs the header using HTTP Basic Authentication.
 func BasicAuth(username, password string) Credentials {
 	return basicAuth{Username: username, Password: password}
 }
 
-// Sign implements the Credentials interface, signing the header using HTTP Basic Authentication.
 func (auth basicAuth) Sign(request *http.Request) {
 	if request == nil {
 		return
@@ -65,7 +62,6 @@ func (auth basicAuth) Sign(request *http.Request) {
 	request.SetBasicAuth(auth.Username, auth.Password)
 }
 
-// String implements the fmt.Stringer interface.
 func (auth basicAuth) String() string {
 	return "BasicAuth{" + auth.Username + ", ***}"
 }
@@ -73,7 +69,7 @@ func (auth basicAuth) String() string {
 // Error is returned when the given credentials aren't authorized to reach the given URL.
 type Error struct {
 	URL         string      // e.g. http://nexus.somewhere.com
-	Credentials Credentials // e.g. credentials.BasicAuth{"username", "password"}
+	Credentials Credentials // e.g. credentials.BasicAuth("username", "password")
 }
 
 // Error implements the error interface.
