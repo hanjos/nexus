@@ -29,16 +29,6 @@ func (a Artifact) String() string {
 	return strings.Join(append(parts, a.Version), ":") + "@" + a.RepositoryID
 }
 
-// DefaultFileName return Maven's default name for this artifact, given its metadata.
-func (a Artifact) DefaultFileName() string {
-	classifier := ""
-	if a.Classifier != "" {
-		classifier = "-" + a.Classifier
-	}
-
-	return a.ArtifactID + "-" + a.Version + classifier + "." + a.Extension
-}
-
 // used for the artifact set.
 func (a *Artifact) hash() string {
 	return a.GroupID + ":" + a.ArtifactID + ":" + a.Version + ":" +
