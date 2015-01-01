@@ -2,6 +2,7 @@ package credentials_test
 
 import (
 	"github.com/hanjos/nexus/credentials"
+	"net/http"
 	"testing"
 )
 
@@ -48,4 +49,38 @@ func TestBasicAuthSignDoesntBarfOnNil(t *testing.T) {
 	}()
 
 	credentials.BasicAuth{"u", "p"}.Sign(nil)
+}
+
+func TestBasicAuthAddAuthorizationDataToTheRequest(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://www.google.com", nil)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+		return
+	}
+
+	if req.Header.Get("Authorization") != "" {
+		t.Errorf("Expected no values associated with a newly created request, got %v", req.Header.Get("Authorization"))
+	}
+
+	credentials.BasicAuth{"username", "password"}.Sign(req)
+
+	if req.Header.Get("Authorization") != "Basic dXNlcm5hbWU6cGFzc3dvcmQ=" {
+		t.Errorf("Expected Basic dXNlcm5hbWU6cGFzc3dvcmQ=, got %v", req.Header.Get("Authorization"))
+	}
+}
+
+func TestNoneRemovesAuthorizationDataFromTheRequest(t *testing.T) {
+	req, err := http.NewRequest("GET", "http://www.google.com", nil)
+	if err != nil {
+		t.Errorf("Error creating request: %v", err)
+		return
+	}
+
+	req.SetBasicAuth("username", "password")
+
+	credentials.None.Sign(req)
+
+	if req.Header.Get("Authorization") != "" {
+		t.Errorf("Expected \"\", got %v", req.Header.Get("Authorization"))
+	}
 }
