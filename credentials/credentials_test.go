@@ -52,10 +52,6 @@ func TestBasicAuthAddAuthorizationDataToTheRequest(t *testing.T) {
 		return
 	}
 
-	if req.Header.Get("Authorization") != "" {
-		t.Errorf("Expected no values associated with a newly created request, got %v", req.Header.Get("Authorization"))
-	}
-
 	credentials.BasicAuth("username", "password").Sign(req)
 
 	if req.Header.Get("Authorization") != "Basic dXNlcm5hbWU6cGFzc3dvcmQ=" {

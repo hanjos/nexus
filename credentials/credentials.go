@@ -16,11 +16,11 @@ type Credentials interface {
 	Sign(request *http.Request)
 }
 
-// None is the zero value for Credentials. Its Sign() removes Authorization data from the header.
+// None is the zero value for Credentials. Its Sign() removes Authorization data from the header. It also implements
+// the fmt.Stringer interface.
 const None = noCredentials(true)
 
-// bool trick for Go to allow a const
-type noCredentials bool
+type noCredentials bool // it's bool for Go to allow a const
 
 func (auth noCredentials) Sign(request *http.Request) {
 	if request == nil {
@@ -49,7 +49,8 @@ type basicAuth struct {
 	Password string
 }
 
-// BasicAuth returns a Credentials which signs the header using HTTP Basic Authentication.
+// BasicAuth returns a credentials.Credentials instance which signs the header using HTTP Basic Authentication. It
+// also implements the fmt.Stringer interface.
 func BasicAuth(username, password string) Credentials {
 	return basicAuth{Username: username, Password: password}
 }
@@ -66,13 +67,13 @@ func (auth basicAuth) String() string {
 	return "BasicAuth(" + auth.Username + ", ***)"
 }
 
-// Error is returned when the given credentials aren't authorized to reach the given URL.
+// Error is returned when the given credentials aren't authorized to reach the given URL. It implements the error
+// interface.
 type Error struct {
 	URL         string      // e.g. http://nexus.somewhere.com
 	Credentials Credentials // e.g. credentials.BasicAuth("username", "password")
 }
 
-// Error implements the error interface.
 func (err Error) Error() string {
 	// err.Credentials may not implement fmt.Stringer, so fmt.Sprintf is safer to use
 	return fmt.Sprintf("%v doesn't have access to %v", err.Credentials, err.URL)
