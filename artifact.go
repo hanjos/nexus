@@ -35,21 +35,24 @@ func (a *Artifact) hash() string {
 		a.Extension + ":" + a.Classifier + "@" + a.RepositoryID
 }
 
+// a zero-byte placeholder. No point in wasting bytes unnecessarily :)
+var empty struct{}
+
 // since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.
-// Artifact's hash method is used to distinguish between artifacts; there's no Java-like Equals contract to follow.
+// Artifact's hash method is used to distinguish between artifacts, since there's no Java-like Equals contract to follow.
 type artifactSet struct {
 	// piles up the artifacts
 	data []*Artifact
 
 	// the set behavior
-	hashMap map[string]bool
+	hashMap map[string]struct{}
 }
 
 // creates and initializes a new set of artifacts.
 func newArtifactSet() *artifactSet {
 	return &artifactSet{
 		data:    []*Artifact{},
-		hashMap: make(map[string]bool),
+		hashMap: make(map[string]struct{}),
 	}
 }
 
@@ -59,7 +62,7 @@ func (set *artifactSet) add(artifacts []*Artifact) {
 		hash := artifact.hash()
 		_, contains := set.hashMap[hash]
 
-		set.hashMap[hash] = true
+		set.hashMap[hash] = empty
 		if !contains {
 			set.data = append(set.data, artifact)
 		}
