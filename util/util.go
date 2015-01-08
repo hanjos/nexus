@@ -8,7 +8,7 @@ import (
 )
 
 // ByteSize represents an amount of bytes. float64 is needed since division
-// is required.
+// is required. Implements the fmt.Stringer interface.
 type ByteSize float64
 
 // Some pre-constructed file size units.
@@ -23,7 +23,7 @@ const (
 func (size ByteSize) String() string {
 	switch {
 	case size <= Kilobyte:
-		return fmt.Sprintf("%d B", size)
+		return fmt.Sprintf("%d B", int(size))
 	case size <= Megabyte:
 		return fmt.Sprintf("%.2f KB", size/Kilobyte)
 	case size <= Gigabyte:
@@ -73,4 +73,41 @@ type MalformedURLError struct {
 // Error implements the error interface.
 func (err MalformedURLError) Error() string {
 	return fmt.Sprintf("Malformed URL: %v", err.URL)
+}
+
+//MapDiff calculates the difference between two maps. It returns three values:
+//
+//* diff: a slice of strings holding the keys in both maps which map to different values;
+//
+//* onlyExpected: a slice of keys only in expected;
+//
+//* onlyActual: a slice of keys only in actual.
+func MapDiff(expected map[string]string, actual map[string]string) (diff []string, onlyExpected []string, onlyActual []string) {
+	keysSeen := map[string]bool{}
+
+	for keyExp, valueExp := range expected {
+		keysSeen[keyExp] = true // marking keyExp to avoid redoing work
+
+		valueAct, ok := actual[keyExp]
+		if !ok { // keyExp isn't in actual
+			onlyExpected = append(onlyExpected, keyExp)
+		} else if valueAct != valueExp { // expected and actual differ
+			diff = append(diff, keyExp)
+		} // else the keys and values match, nothing to do
+	}
+
+	for keyAct, valueAct := range actual {
+		if keysSeen[keyAct] { // already processed, move along
+			continue
+		}
+
+		valueExp, ok := expected[keyAct]
+		if !ok { // keyAct isn't in actual
+			onlyActual = append(onlyActual, keyAct)
+		} else if valueExp != valueAct { // expected and actual differ
+			diff = append(diff, keyAct)
+		}
+	}
+
+	return // diff, onlyExpected, onlyActual
 }

@@ -114,3 +114,117 @@ func TestIfMalformedURLErrorIsError(t *testing.T) {
 		t.Errorf("util.MalformedURLError does not implement the error interface!")
 	}
 }
+
+var mdTest = []struct {
+	expected map[string]string
+	actual   map[string]string
+
+	diff         []string
+	onlyExpected []string
+	onlyActual   []string
+}{
+	{
+		map[string]string{"a": "a", "b": "b"},
+		map[string]string{"a": "a1", "c": "c"},
+
+		[]string{"a"},
+		[]string{"b"},
+		[]string{"c"},
+	},
+	{
+		map[string]string{"a": "a", "b": "b"},
+		map[string]string{"a": "a", "b": "b"},
+
+		[]string{},
+		[]string{},
+		[]string{},
+	},
+	{
+		map[string]string{"a": "a", "b": "b", "c": "c"},
+		map[string]string{"a": "a", "c": "c"},
+
+		[]string{},
+		[]string{"b"},
+		[]string{},
+	},
+	{
+		map[string]string{"a": "a", "b": "b"},
+		map[string]string{"a": "a", "b": "b", "c": "c"},
+
+		[]string{},
+		[]string{},
+		[]string{"c"},
+	},
+	{
+		map[string]string{},
+		map[string]string{},
+
+		[]string{},
+		[]string{},
+		[]string{},
+	},
+	{
+		map[string]string{"a": "a"},
+		map[string]string{},
+
+		[]string{},
+		[]string{"a"},
+		[]string{},
+	},
+	{
+		nil,
+		map[string]string{"a": "a"},
+
+		[]string{},
+		[]string{},
+		[]string{"a"},
+	},
+	{
+		map[string]string{"a": "a"},
+		nil,
+
+		[]string{},
+		[]string{"a"},
+		[]string{},
+	},
+	{
+		nil,
+		nil,
+
+		[]string{},
+		[]string{},
+		[]string{},
+	},
+}
+
+func sliceEquals(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+
+	for i, valueA := range a {
+		if b[i] != valueA {
+			return false
+		}
+	}
+
+	return true
+}
+
+func TestMapDiff(t *testing.T) {
+	for _, md := range mdTest {
+		expDiff, expOnlyE, expOnlyA := MapDiff(md.expected, md.actual)
+
+		if !sliceEquals(expDiff, md.diff) {
+			t.Errorf("expected diff %v, got %v", md.diff, expDiff)
+		}
+
+		if !sliceEquals(expOnlyE, md.onlyExpected) {
+			t.Errorf("expected onlyExpected %v, got %v", md.onlyExpected, expOnlyE)
+		}
+
+		if !sliceEquals(expOnlyA, md.onlyActual) {
+			t.Errorf("expected onlyActual %v, got %v", md.onlyActual, expOnlyA)
+		}
+	}
+}

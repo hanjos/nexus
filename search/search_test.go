@@ -4,39 +4,10 @@ import (
 	"github.com/hanjos/nexus"
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
+	"github.com/hanjos/nexus/util"
 
 	"testing"
 )
-
-func mapDiff(expected map[string]string, actual map[string]string) (diff []string, onlyExpected []string, onlyActual []string) {
-	keysSeen := map[string]bool{}
-
-	for kExp, vExp := range expected {
-		keysSeen[kExp] = true // marking kExp to avoid redoing work
-
-		vAct, ok := actual[kExp]
-		if !ok { // kExp isn't in actual
-			onlyExpected = append(onlyExpected, kExp)
-		} else if vAct != vExp { // expected and actual differ
-			diff = append(diff, kExp)
-		} // else the keys and values match, nothing to do
-	}
-
-	for kAct, vAct := range actual {
-		if keysSeen[kAct] { // already processed, move along
-			continue
-		}
-
-		vExp, ok := expected[kAct]
-		if !ok { // kAct isn't in actual
-			onlyActual = append(onlyActual, kAct)
-		} else if vExp != vAct { // expected and actual differ
-			diff = append(diff, kAct)
-		}
-	}
-
-	return // diff, onlyExpected, onlyActual
-}
 
 func TestAllImplementsCriteria(t *testing.T) {
 	if _, ok := interface{}(search.All).(search.Criteria); !ok {
@@ -61,7 +32,7 @@ func TestByCoordinatesSetsTheProperFields(t *testing.T) {
 	actual := search.ByCoordinates{GroupID: "g", ArtifactID: "a", Version: "v", Packaging: "p", Classifier: "c"}.Parameters()
 	expected := map[string]string{"g": "g", "a": "a", "v": "v", "p": "p", "c": "c"}
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
@@ -86,7 +57,7 @@ func TestByClassnameSetsTheProperFields(t *testing.T) {
 	actual := search.ByClassname("cn").Parameters()
 	expected := map[string]string{"cn": "cn"}
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
@@ -111,7 +82,7 @@ func TestByChecksumSetsTheProperFields(t *testing.T) {
 	actual := search.ByChecksum("sha1").Parameters()
 	expected := map[string]string{"sha1": "sha1"}
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
@@ -136,7 +107,7 @@ func TestByKeywordSetsTheProperFields(t *testing.T) {
 	actual := search.ByKeyword("q").Parameters()
 	expected := map[string]string{"q": "q"}
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
@@ -161,7 +132,7 @@ func TestByRepositorySetsTheProperFields(t *testing.T) {
 	actual := search.ByRepository("repositoryId").Parameters()
 	expected := map[string]string{"repositoryId": "repositoryId"}
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
@@ -186,7 +157,7 @@ func TestInRepositorySetsTheProperFields(t *testing.T) {
 	actual := search.InRepository{"repositoryId", search.ByChecksum("sha1")}.Parameters()
 	expected := map[string]string{"repositoryId": "repositoryId", "sha1": "sha1"}
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
@@ -205,7 +176,7 @@ func TestInRepositoryWithSearchAllIsTheSameAsByRepository(t *testing.T) {
 	actual := search.InRepository{"repositoryId", search.All}.Parameters()
 	expected := search.ByRepository("repositoryId").Parameters()
 
-	diff, onlyExpected, onlyActual := mapDiff(expected, actual)
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
 
 	for _, key := range diff {
 		t.Errorf("Mismatch on key %q: expected value %q, got %q", key, expected[key], actual[key])
