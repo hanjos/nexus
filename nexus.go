@@ -2,7 +2,7 @@ package nexus
 
 import (
 	"bytes"
-	"encoding/json"
+	"encoding/xml"
 	"io"
 	"net/http"
 	"strconv"
@@ -53,7 +53,9 @@ func (nexus Nexus2x) fetch(path string, query map[string]string) (*http.Response
 	}
 
 	nexus.Credentials.Sign(get)
-	get.Header.Add("Accept", "application/json")
+
+	// by default Nexus returns XML, but it's cheap to be explicit
+	get.Header.Add("Accept", "application/xml")
 
 	// go for it!
 	response, err := nexus.HTTPClient.Do(get)
@@ -101,7 +103,7 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	}
 
 	if len(params) == 1 {
-		if repoID, ok := params["repositoryID"]; ok { // all in repo search
+		if repoID, ok := params["repositoryId"]; ok { // all in repo search
 			return nexus.fetchArtifactsFrom(repoID)
 		}
 	}
@@ -110,25 +112,24 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 }
 
 type artifactSearchResponse struct {
-	TotalCount int
-	Data       []struct {
-		GroupID      string
-		ArtifactID   string
-		Version      string
+	Artifacts []struct {
+		GroupID      string `xml:"groupId"`
+		ArtifactID   string `xml:"artifactId"`
+		Version      string `xml:"version"`
 		ArtifactHits []struct {
-			RepositoryID  string
+			RepositoryID  string `xml:"repositoryId"`
 			ArtifactLinks []struct {
-				Extension  string
-				Classifier string
-			}
-		}
-	}
+				Extension  string `xml:"extension"`
+				Classifier string `xml:"classifier"`
+			} `xml:"artifactLinks>artifactLink"`
+		} `xml:"artifactHits>artifactHit"`
+	} `xml:"data>artifact"`
 }
 
 func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 	var artifacts = []*Artifact{}
 
-	for _, artifact := range payload.Data {
+	for _, artifact := range payload.Artifacts {
 		g := artifact.GroupID
 		a := artifact.ArtifactID
 		v := artifact.Version
@@ -192,7 +193,7 @@ func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact,
 		}
 
 		var payload *artifactSearchResponse
-		err = json.Unmarshal(body, &payload)
+		err = xml.Unmarshal(body, &payload)
 		if err != nil {
 			return nil, err
 		}
@@ -202,7 +203,7 @@ func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact,
 
 		// a lower bound for the number of artifacts returned, since every GAV in the payload holds at least one
 		// artifact. There will be some repetitions, but artifacts takes care of that.
-		offset = len(payload.Data)
+		offset = len(payload.Artifacts)
 	}
 
 	return artifacts.data, nil
@@ -228,7 +229,7 @@ func filterPoms(artifacts []*Artifact, filter map[string]string) []*Artifact {
 
 // returns the first-level directories in the given repository.
 func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryID string) ([]string, error) {
-	// XXX Don't forget the ending /, or the response is always XML!
+	// XXX Don't forget the ending /!
 	resp, err := nexus.fetch("service/local/repositories/"+repositoryID+"/content/", nil)
 	if err != nil {
 		return nil, err
@@ -242,12 +243,12 @@ func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryID string) ([]string, error
 
 	var payload *struct {
 		Data []struct {
-			Leaf bool
-			Text string
-		}
+			Leaf bool   `xml:"leaf"`
+			Text string `xml:"text"`
+		} `xml:"data>content-item"`
 	}
 
-	err = json.Unmarshal(body, &payload)
+	err = xml.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -283,7 +284,7 @@ func (nexus Nexus2x) fetchArtifactsFrom(repositoryID string) ([]*Artifact, error
 	return concurrentArtifactSearch(
 		dirs,
 		func(datum string) ([]*Artifact, error) {
-			return nexus.fetchArtifactsWhere(map[string]string{"g": datum + "*", "repositoryID": repositoryID})
+			return nexus.fetchArtifactsWhere(map[string]string{"g": datum + "*", "repositoryId": repositoryID})
 		})
 }
 
@@ -328,7 +329,7 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	}
 
 	var payload *infoSearchResponse
-	err = json.Unmarshal(body, &payload)
+	err = xml.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -357,11 +358,11 @@ func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 
 	var payload *struct {
 		Data struct {
-			RepositoryPath string
-		}
+			RepositoryPath string `xml:"repositoryPath"`
+		} `xml:"data"`
 	}
 
-	err = json.Unmarshal(body, &payload)
+	err = xml.Unmarshal(body, &payload)
 	if err != nil {
 		return "", err
 	}
@@ -371,17 +372,17 @@ func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 
 type infoSearchResponse struct {
 	Data struct {
-		MimeType     string
-		Uploader     string
-		Uploaded     int64
-		LastChanged  int64
-		Size         int64
-		Sha1Hash     string
+		MimeType     string `xml:"mimeType"`
+		Uploader     string `xml:"uploader"`
+		Uploaded     int64  `xml:"uploaded"`
+		LastChanged  int64  `xml:"lastChanged"`
+		Size         int64  `xml:"size"`
+		Sha1Hash     string `xml:"sha1Hash"`
 		Repositories []struct {
-			RepositoryID string
-			ArtifactURL  string
-		}
-	}
+			RepositoryID string `xml:"repositoryId"`
+			ArtifactURL  string `xml:"artifactUrl"`
+		} `xml:"repositories>org.sonatype.nexus.rest.model.RepositoryUrlResource"`
+	} `xml:"data"`
 }
 
 func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactInfo {
@@ -418,7 +419,7 @@ func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 	}
 
 	var payload *repoSearchResponse
-	err = json.Unmarshal(body, &payload)
+	err = xml.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
@@ -428,13 +429,13 @@ func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 
 type repoSearchResponse struct {
 	Data []struct {
-		ID         string
-		Name       string
-		RepoType   string
-		RepoPolicy string
-		Format     string
-		RemoteURI  string
-	}
+		ID        string `xml:"id"`
+		Name      string `xml:"name"`
+		Type      string `xml:"repoType"`
+		Policy    string `xml:"repoPolicy"`
+		Format    string `xml:"format"`
+		RemoteURI string `xml:"remoteUri"`
+	} `xml:"data>repositories-item"`
 }
 
 func extractReposFrom(payload *repoSearchResponse) []*Repository {
@@ -444,9 +445,9 @@ func extractReposFrom(payload *repoSearchResponse) []*Repository {
 		newRepo := &Repository{
 			ID:        repo.ID,
 			Name:      repo.Name,
-			Type:      repo.RepoType,
+			Type:      repo.Type,
 			Format:    repo.Format,
-			Policy:    repo.RepoPolicy,
+			Policy:    repo.Policy,
 			RemoteURI: repo.RemoteURI,
 		}
 

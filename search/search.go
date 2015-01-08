@@ -145,7 +145,7 @@ type ByRepository string
 // Parameters implements the search.Criteria interface.
 func (byRepo ByRepository) Parameters() map[string]string {
 	return map[string]string{
-		"repositoryID": string(byRepo),
+		"repositoryId": string(byRepo),
 	}
 }
 
@@ -164,7 +164,7 @@ type InRepository struct {
 // Parameters implements the search.Criteria interface.
 func (inRepo InRepository) Parameters() map[string]string {
 	params := inRepo.Criteria.Parameters()
-	params["repositoryID"] = inRepo.RepositoryID
+	params["repositoryId"] = inRepo.RepositoryID
 
 	return params
 }
