@@ -38,7 +38,7 @@ var slashesRe = regexp.MustCompile(`//+`)
 
 // Removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
 // Returns an util.MalformedURLError if the given URL can't be parsed.
-func cleanSlashes(url string) (string, error) {
+func CleanSlashes(url string) (string, error) {
 	matches := urlRe.FindStringSubmatch(url)
 	if matches == nil {
 		return "", &MalformedURLError{url}
@@ -59,10 +59,10 @@ func BuildFullURL(host string, path string, query map[string]string) (string, er
 	}
 
 	if len(params) == 0 {
-		return cleanSlashes(host + "/" + path)
+		return CleanSlashes(host + "/" + path)
 	}
 
-	return cleanSlashes(host + "/" + path + "?" + strings.Join(params, "&"))
+	return CleanSlashes(host + "/" + path + "?" + strings.Join(params, "&"))
 }
 
 // MalformedURLError is returned when the given URL could not be parsed.
