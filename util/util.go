@@ -36,8 +36,8 @@ func (size ByteSize) String() string {
 var urlRe = regexp.MustCompile(`^(?P<scheme>[^:]+)://(?P<rest>.+)`)
 var slashesRe = regexp.MustCompile(`//+`)
 
-// Removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
-// Returns an util.MalformedURLError if the given URL can't be parsed.
+// CleanSlashes removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as
+// valid. Returns an util.MalformedURLError if the given URL can't be parsed.
 func CleanSlashes(url string) (string, error) {
 	matches := urlRe.FindStringSubmatch(url)
 	if matches == nil {
