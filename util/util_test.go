@@ -244,5 +244,5 @@ func ExampleMapDiff() {
 	diff, onlyExpected, onlyActual = util.MapDiff(expected, expected)
 	fmt.Println(diff)         // []
 	fmt.Println(onlyExpected) // []
-	fmt.Println(onlyActual)   // []	
+	fmt.Println(onlyActual)   // []
 }

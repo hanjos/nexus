@@ -35,8 +35,8 @@ func Example() {
 
 		artifacts, err := n.Artifacts(
 			search.InRepository{
-				repo.ID,
-				search.ByCoordinates{
+				RepositoryID: repo.ID,
+				Criteria: search.ByCoordinates{
 					GroupID:    "javax.enterprise*",
 					Classifier: "sources"}})
 
@@ -60,8 +60,8 @@ func ExampleNexus2x_Artifacts() {
 	// using a composite search
 	n.Artifacts(
 		search.InRepository{
-			"releases",
-			search.ByKeyword("javax.enterprise")})
+			RepositoryID: "releases",
+			Criteria:     search.ByKeyword("javax.enterprise")})
 
 	// searching for every artifact in Nexus (WARNING: this can take a LOOONG time - and memory!)
 	n.Artifacts(search.All)

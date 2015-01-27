@@ -154,7 +154,7 @@ func TestInRepositoryImplementsCriteria(t *testing.T) {
 }
 
 func TestInRepositorySetsTheProperFields(t *testing.T) {
-	actual := search.InRepository{"repositoryId", search.ByChecksum("sha1")}.Parameters()
+	actual := search.InRepository{RepositoryID: "repositoryId", Criteria: search.ByChecksum("sha1")}.Parameters()
 	expected := map[string]string{"repositoryId": "repositoryId", "sha1": "sha1"}
 
 	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
@@ -173,7 +173,7 @@ func TestInRepositorySetsTheProperFields(t *testing.T) {
 }
 
 func TestInRepositoryWithSearchAllIsTheSameAsByRepository(t *testing.T) {
-	actual := search.InRepository{"repositoryId", search.All}.Parameters()
+	actual := search.InRepository{RepositoryID: "repositoryId", Criteria: search.All}.Parameters()
 	expected := search.ByRepository("repositoryId").Parameters()
 
 	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
