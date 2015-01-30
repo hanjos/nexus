@@ -1,8 +1,11 @@
-package util
+package util_test
 
 import (
+	"fmt"
 	"reflect"
 	"testing"
+
+	"github.com/hanjos/nexus/util"
 )
 
 var cleanSlashesOK = []struct {
@@ -20,12 +23,12 @@ var cleanSlashesErr = []struct {
 	input    string
 	expected reflect.Type
 }{
-	{"http:/maven.java.net", reflect.TypeOf(&MalformedURLError{})},
+	{"http:/maven.java.net", reflect.TypeOf(&util.MalformedURLError{})},
 }
 
 func TestCleanSlashes(t *testing.T) {
 	for _, p := range cleanSlashesOK {
-		actual, err := cleanSlashes(p.input)
+		actual, err := util.CleanSlashes(p.input)
 
 		if err != nil {
 			t.Errorf("expected %v, got an error %v", p.expected, err)
@@ -35,7 +38,7 @@ func TestCleanSlashes(t *testing.T) {
 	}
 
 	for _, p := range cleanSlashesErr {
-		actual, err := cleanSlashes(p.input)
+		actual, err := util.CleanSlashes(p.input)
 
 		if actual != "" {
 			t.Errorf("expected an error %v, got a value %v", p.expected, actual)
@@ -83,12 +86,12 @@ var bfuErr = []struct {
 
 	expected reflect.Type
 }{
-	{"http:/maven.java.net", "/nexus", map[string]string{}, reflect.TypeOf(&MalformedURLError{})},
+	{"http:/maven.java.net", "/nexus", map[string]string{}, reflect.TypeOf(&util.MalformedURLError{})},
 }
 
 func TestBuildFullURL(t *testing.T) {
 	for _, p := range bfuOk {
-		actual, err := BuildFullURL(p.host, p.path, p.query)
+		actual, err := util.BuildFullURL(p.host, p.path, p.query)
 
 		if err != nil {
 			t.Errorf("expected %v, got an error %v", p.expected, err)
@@ -98,7 +101,7 @@ func TestBuildFullURL(t *testing.T) {
 	}
 
 	for _, p := range bfuErr {
-		actual, err := BuildFullURL(p.host, p.path, p.query)
+		actual, err := util.BuildFullURL(p.host, p.path, p.query)
 
 		if actual != "" {
 			t.Errorf("expected an error %v, got a value %v", p.expected, actual)
@@ -110,7 +113,7 @@ func TestBuildFullURL(t *testing.T) {
 
 func TestIfMalformedURLErrorIsError(t *testing.T) {
 	// type assertion only works on interface types, so...
-	if _, ok := interface{}(&MalformedURLError{}).(error); !ok {
+	if _, ok := interface{}(&util.MalformedURLError{}).(error); !ok {
 		t.Errorf("util.MalformedURLError does not implement the error interface!")
 	}
 }
@@ -213,7 +216,7 @@ func sliceEquals(a, b []string) bool {
 
 func TestMapDiff(t *testing.T) {
 	for _, md := range mdTest {
-		expDiff, expOnlyE, expOnlyA := MapDiff(md.expected, md.actual)
+		expDiff, expOnlyE, expOnlyA := util.MapDiff(md.expected, md.actual)
 
 		if !sliceEquals(expDiff, md.diff) {
 			t.Errorf("expected diff %v, got %v", md.diff, expDiff)
@@ -227,4 +230,19 @@ func TestMapDiff(t *testing.T) {
 			t.Errorf("expected onlyActual %v, got %v", md.onlyActual, expOnlyA)
 		}
 	}
+}
+
+func ExampleMapDiff() {
+	expected := map[string]string{"a": "a", "b": "b"}
+	actual := map[string]string{"a": "aaaa", "c": "c"}
+
+	diff, onlyExpected, onlyActual := util.MapDiff(expected, actual)
+	fmt.Println(diff)         // ["a"]
+	fmt.Println(onlyExpected) // ["b"]
+	fmt.Println(onlyActual)   // ["c"]
+
+	diff, onlyExpected, onlyActual = util.MapDiff(expected, expected)
+	fmt.Println(diff)         // []
+	fmt.Println(onlyExpected) // []
+	fmt.Println(onlyActual)   // []
 }
