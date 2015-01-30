@@ -36,21 +36,23 @@ func (size ByteSize) String() string {
 var urlRe = regexp.MustCompile(`^(?P<scheme>[^:]+)://(?P<rest>.+)`)
 var slashesRe = regexp.MustCompile(`//+`)
 
-// Removes extraneous slashes (like nexus.com///something), which Nexus' API doesn't recognize as valid.
-// Returns an util.MalformedURLError if the given URL can't be parsed.
+// Removes extraneous slashes (like nexus.com///something), which Nexus' API
+// doesn't recognize as valid. Returns an util.MalformedURLError if the given
+// URL can't be parsed.
 func cleanSlashes(url string) (string, error) {
 	matches := urlRe.FindStringSubmatch(url)
 	if matches == nil {
 		return "", &MalformedURLError{url}
 	}
 
-	// if we got here, scheme = matches[1] and rest = matches[2]. Clean the extraneous slashes
+	// scheme = matches[1] and rest = matches[2]. Clean the extraneous slashes
 	return matches[1] + "://" + slashesRe.ReplaceAllString(matches[2], "/"), nil
 }
 
-// BuildFullURL builds a complete URL string in the format host/path?query, where query's keys and values will be
-// formatted as k=v. Returns an util.MalformedURLError if the given URL can't be parsed. This function is a (very)
-// simplified version of url.URL.String().
+// BuildFullURL builds a complete URL string in the format host/path?query,
+// where query's keys and values will be formatted as k=v. Returns an
+// util.MalformedURLError if the given URL can't be parsed. This function is a
+// (very simplified version of url.URL.String().
 func BuildFullURL(host string, path string, query map[string]string) (string, error) {
 	params := []string{}
 
@@ -77,11 +79,13 @@ func (err MalformedURLError) Error() string {
 
 //MapDiff calculates the difference between two maps. It returns three values:
 //
-//* diff: a slice of strings holding the keys in both maps which map to different values;
+//* diff: a slice of strings, holding the keys in both with different values;
 //
 //* onlyExpected: a slice of keys only in expected;
 //
 //* onlyActual: a slice of keys only in actual.
+//
+// When the maps are equal, all three slices will be empty.
 func MapDiff(expected map[string]string, actual map[string]string) (diff []string, onlyExpected []string, onlyActual []string) {
 	keysSeen := map[string]bool{}
 

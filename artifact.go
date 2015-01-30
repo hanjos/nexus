@@ -8,7 +8,8 @@ import (
 	"github.com/hanjos/nexus/util"
 )
 
-// Artifact is a Maven coordinate to a single artifact, plus the repository where it came from.
+// Artifact is a Maven coordinate to a single artifact, plus the repository
+// where it came from.
 type Artifact struct {
 	GroupID      string // e.g. org.springframework
 	ArtifactID   string // e.g. spring-core
@@ -18,7 +19,8 @@ type Artifact struct {
 	RepositoryID string // e.g. releases
 }
 
-// String implements the fmt.Stringer interface, as per Maven docs (http://maven.apache.org/pom.html#Maven_Coordinates).
+// String implements the fmt.Stringer interface, as per Maven docs
+// (http://maven.apache.org/pom.html#Maven_Coordinates).
 func (a Artifact) String() string {
 	var parts = []string{a.GroupID, a.ArtifactID, a.Extension}
 
@@ -38,8 +40,9 @@ func (a *Artifact) hash() string {
 // a zero-byte placeholder. No point in wasting bytes unnecessarily :)
 var empty struct{}
 
-// since Go doesn't have a built-in set implementation, a make-shift one follows, using a map for the heavy duty.
-// Artifact's hash method is used to distinguish between artifacts, since there's no Java-like Equals contract to follow.
+// since Go doesn't have a built-in set implementation, a make-shift one
+// follows, using a map for the heavy duty. Artifact's hash method is used to
+// distinguish between artifacts, since there's no Java-like Equals contract to follow.
 type artifactSet struct {
 	// piles up the artifacts
 	data []*Artifact
@@ -84,16 +87,19 @@ type ArtifactInfo struct {
 
 // String implements the fmt.Stringer interface.
 func (info ArtifactInfo) String() string {
-	return fmt.Sprintf("%v [SHA1 %v, Mime-Type %v, %v]", info.Artifact, info.Sha1, info.MimeType, info.Size)
+	return fmt.Sprintf("%v [SHA1 %v, Mime-Type %v, %v]",
+		info.Artifact, info.Sha1, info.MimeType, info.Size)
 }
 
-// A make-shift map-reducer, distributes an artifact search in multiple goroutines. Expects an array of strings and a
-// query function. There will be one goroutine for every element of data. Each goroutine will call query with its
-// respective datum.
+// A make-shift map-reducer, distributes an artifact search in multiple
+// goroutines. Expects an array of strings and a query function. There will be
+// one goroutine for every element of data. Each goroutine will call query with
+// its respective datum.
 func concurrentArtifactSearch(data []string, query func(string) ([]*Artifact, error)) ([]*Artifact, error) {
-	// search for the artifacts in each element of data
 	artifacts := make(chan []*Artifact)
 	errors := make(chan error)
+
+	// search for the artifacts in each element of data
 	for _, datum := range data {
 		go func(datum string) {
 			a, err := query(datum)

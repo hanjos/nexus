@@ -13,8 +13,9 @@ import (
 	"github.com/hanjos/nexus/util"
 )
 
-// Client accesses a Nexus instance. The default Client should work for the newest Nexus versions. Older Nexus
-// versions may need or benefit from a specific client.
+// Client accesses a Nexus instance. The default Client should work for the
+// newest Nexus versions. Older Nexus versions may need or benefit from a
+// specific client.
 type Client interface {
 	// Returns all artifacts in this Nexus which satisfy the given criteria.
 	// Nil is the same as search.All. If no criteria are given
@@ -28,16 +29,20 @@ type Client interface {
 	InfoOf(artifact *Artifact) (*ArtifactInfo, error)
 }
 
-// Nexus2x represents a Nexus v2.x instance. It's the default Client implementation.
+// Nexus2x represents a Nexus v2.x instance. It's the default Client
+// implementation.
 type Nexus2x struct {
-	URL         string                  // e.g. http://nexus.somewhere.com:8080/nexus
-	Credentials credentials.Credentials // e.g. credentials.BasicAuth("username", "password")
+	URL         string                  // e.g. http://somewhere.com:8080/nexus
+	Credentials credentials.Credentials // e.g. credentials.BasicAuth("u", "p")
 	HTTPClient  *http.Client            // the network client
 }
 
 // New creates a new Nexus client, using the default Client implementation.
 func New(url string, c credentials.Credentials) Client {
-	return &Nexus2x{URL: url, Credentials: credentials.OrZero(c), HTTPClient: &http.Client{}}
+	return &Nexus2x{
+		URL:         url,
+		Credentials: credentials.OrZero(c),
+		HTTPClient:  &http.Client{}}
 }
 
 // does the actual legwork, going to Nexus and validating the response.
@@ -88,13 +93,15 @@ func bodyToBytes(body io.ReadCloser) ([]byte, error) {
 	return buf.Bytes(), nil
 }
 
-// Artifacts implements the Client interface, returning all artifacts in this Nexus which satisfy the given criteria.
-// Nil is the same as search.All. If no criteria are given (e.g. search.All), it does a full search in all
+// Artifacts implements the Client interface, returning all artifacts in this
+// Nexus which satisfy the given criteria. Nil is the same as search.All. If no
+// criteria are given (e.g. search.All), it does a full search in all
 // repositories.
 //
-// Generally you don't want that, especially if you have proxy repositories; Maven Central (which many people will
-// proxy) has, at the time of this comment, over 800,000 artifacts (!), which in this implementation will be all loaded
-// into memory (!!). But, if you insist...
+// Generally you don't want that, especially if you have proxy repositories;
+// Maven Central (which many people will proxy) has, at the time of this
+// comment, over 800,000 artifacts (!), which in this implementation will be
+// *all* loaded into memory (!!). But, if you insist...
 func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	params := search.OrZero(criteria).Parameters()
 
@@ -148,7 +155,8 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 	return artifacts
 }
 
-// a slight modification of Go's v, ok := m[key] idiom. has returns false for ok if value is "".
+// a slight modification of Go's v, ok := m[key] idiom. has returns false for
+// ok if value is "".
 func has(m map[string]string, key string) (value string, ok bool) {
 	value, ok = m[key]
 
@@ -159,17 +167,22 @@ func has(m map[string]string, key string) (value string, ok bool) {
 	return value, ok
 }
 
-// returns all artifacts in this Nexus which pass the given filter. The expected keys in filter are the flags Nexus'
-// REST API accepts, with the same semantics.
+// returns all artifacts in this Nexus which pass the given filter. The expected
+// keys in filter are the flags Nexus' REST API accepts, with the same
+// semantics.
 func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact, error) {
-	// This implementation is slightly tricky. As artifactSearchResponse shows, Nexus always wraps the artifacts in a
-	// GAV structure. This structure doesn't mean that within the wrapper are *all* the artifacts within that GAV, or
-	// that the next page won't repeat artifacts if an incomplete GAV was returned earlier.
+	// This implementation is slightly tricky. As artifactSearchResponse shows,
+	// Nexus always wraps the artifacts in a GAV structure. This structure doesn't
+	// mean that within the wrapper are *all* the artifacts within that GAV, or
+	// that the next page won't repeat artifacts if an incomplete GAV was returned
+	// earlier.
 	//
-	// On top of that, I haven't quite figured out how Nexus is counting artifacts for paging purposes. POMs don't
-	// seem to count as artifacts, except when the project has a 'pom' packaging (which I can't know for sure without
-	// GET-ing every POM), but the math still doesn't quite come together. So I took a conservative approach, which
-	// forces a sequential algorithm. This search can be parallelized if the paging problem is solved.
+	// On top of that, I haven't quite figured out how Nexus is counting artifacts
+	// for paging purposes. POMs don't seem to count as artifacts, except when the
+	// project has a 'pom' packaging (which I can't know for sure without GET-ing
+	// every POM), but the math still didn't quite come together. So I took a
+	// conservative approach, which forces a sequential algorithm. The search
+	// could be parallelized if the paging problem is solved.
 
 	from := 0
 	offset := 0
@@ -198,22 +211,25 @@ func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact,
 			return nil, err
 		}
 
-		// extract and store the artifacts, filtering out the POMs if necessary. The set ensures we ignore repetitions.
+		// extract and store the artifacts, filtering out the POMs if necessary.
+		// The set ensures we ignore repetitions.
 		artifacts.add(filterPoms(extractArtifactsFrom(payload), filter))
 
-		// a lower bound for the number of artifacts returned, since every GAV in the payload holds at least one
-		// artifact. There will be some repetitions, but artifacts takes care of that.
+		// a lower bound for the number of artifacts returned, since every GAV in
+		// the payload holds at least one artifact. There will be some repetitions,
+		// but artifacts takes care of that.
 		offset = len(payload.Artifacts)
 	}
 
 	return artifacts.data, nil
 }
 
-// Nexus 2.x's search always returns the POMs, even when one filters specifically for the packaging or the
-// classifier. So we'll have to take them out here. Of course, if the user specifies "pom", she'll get POMs :)
+// Nexus 2.x's search always returns the POMs, even when one filters
+// specifically for the packaging or the classifier. So we'll have to take them
+// out here. Of course, if the user specifies "pom", she'll get POMs :)
 // XXX: this function modifies artifacts!
 func filterPoms(artifacts []*Artifact, filter map[string]string) []*Artifact {
-	packaging, okPack := has(filter, "p") // using has instead of Go's idiom, since p="" still means no packaging
+	packaging, okPack := has(filter, "p") // using has: p="" means no packaging
 	_, okClass := has(filter, "c")
 
 	if (okPack && packaging != "pom") || okClass { // remove the POMs
@@ -267,12 +283,16 @@ func (nexus Nexus2x) fetchFirstLevelDirsOf(repositoryID string) ([]string, error
 
 // returns all artifacts in the given repository.
 func (nexus Nexus2x) fetchArtifactsFrom(repositoryID string) ([]*Artifact, error) {
-	// This function also has some tricky details. In the olden days (around version 1.8 or so), one could get all the
-	// artifacts in a given repository by searching for *. This has been disabled in the newer versions, without any
-	// official alternative for "give me everything you have". So, the solution adopted here is:
+	// This function also has some tricky details. In the olden days (around
+	// version 1.8 or so), one could get all the artifacts in a given repository
+	// by searching for *. This has been disabled in the newer versions, without
+	// any official alternative for "give me everything you have". So, the
+	// solution adopted here is:
 	// 1) get the first level directories in repositoryID
-	// 2) for every directory 'dir', do a search filtering for the groupID 'dir*' and the repository ID
-	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the results in common* appear also in com*)
+	// 2) for every directory 'dir', do a search filtering for the groupID 'dir*'
+	//    and the repository ID
+	// 3) accumulate the results in an artifactSet to avoid duplicates (e.g. the
+	//    results in common* appear also in com*)
 
 	// 1)
 	dirs, err := nexus.fetchFirstLevelDirsOf(repositoryID)
@@ -284,13 +304,15 @@ func (nexus Nexus2x) fetchArtifactsFrom(repositoryID string) ([]*Artifact, error
 	return concurrentArtifactSearch(
 		dirs,
 		func(datum string) ([]*Artifact, error) {
-			return nexus.fetchArtifactsWhere(map[string]string{"g": datum + "*", "repositoryId": repositoryID})
+			return nexus.fetchArtifactsWhere(
+				map[string]string{"g": datum + "*", "repositoryId": repositoryID})
 		})
 }
 
 // returns all artifacts visible by this Nexus.
 func (nexus Nexus2x) fetchAllArtifacts() ([]*Artifact, error) {
-	// there's no easy way to do this, so get the repos and search for all artifacts in each one (yup)
+	// there's no easy way to do this, so get the repos and search for all
+	// artifacts in each one (yup)
 	repos, err := nexus.Repositories()
 	if err != nil {
 		return nil, err
@@ -304,12 +326,16 @@ func (nexus Nexus2x) fetchAllArtifacts() ([]*Artifact, error) {
 
 	return concurrentArtifactSearch(
 		ids,
-		func(datum string) ([]*Artifact, error) { return nexus.fetchArtifactsFrom(datum) })
+		func(datum string) ([]*Artifact, error) {
+			return nexus.fetchArtifactsFrom(datum)
+		})
 }
 
-// InfoOf implements the Client interface, fetching extra information about the given artifact.
+// InfoOf implements the Client interface, fetching extra information about the
+// given artifact.
 func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
-	// first resolve the artifact: building the URL by hand may fail in some situations (e.g. snapshot artifacts, odd
+	// first resolve the artifact: building the URL by hand may fail in some
+	// situations (e.g. snapshot artifacts, odd
 	// file names)
 	path, err := nexus.fetchRepositoryPathOf(artifact)
 	if err != nil {
@@ -317,7 +343,8 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	}
 
 	// now we can reliably build the proper URL
-	resp, err := nexus.fetch("service/local/repositories/"+artifact.RepositoryID+"/content"+path,
+	resp, err := nexus.fetch(
+		"service/local/repositories/"+artifact.RepositoryID+"/content"+path,
 		map[string]string{"describe": "info"})
 	if err != nil {
 		return nil, err
@@ -406,7 +433,8 @@ func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactI
 	}
 }
 
-// Repositories implements the Client interface, returning all repositories in this Nexus.
+// Repositories implements the Client interface, returning all repositories in
+// this Nexus.
 func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 	resp, err := nexus.fetch("service/local/repositories", nil)
 	if err != nil {

@@ -10,10 +10,10 @@ import (
 
 // Error is returned when there's an error on an attempt to access Nexus.
 type Error struct {
-	URL        string // e.g. http://nexus.somewhere.com
+	URL        string // e.g. http://somewhere.com
 	StatusCode int    // e.g. 400
 	Status     string // e.g. 400 Bad response
-	Message    string // e.g. Error (400 Bad response) from http://nexus.somewhere.com
+	Message    string // e.g. Error (400 Bad response) from http://somewhere.com
 }
 
 // Error implements the error interface.
@@ -21,7 +21,8 @@ func (err Error) Error() string {
 	return err.Message
 }
 
-// Nexus' API returns error messages sometimes; this function is an attempt to capture and return them to the caller.
+// Nexus' API returns error messages sometimes; this function is an attempt to
+// capture and return them to the caller.
 func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
 	e := Error{
 		URL:        nexus.URL,
@@ -32,7 +33,7 @@ func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
 
 	body, err := bodyToBytes(response.Body)
 	if err != nil {
-		return e // problems extracting the response shouldn't mask the original error
+		return e // problems getting the response shouldn't mask the original error
 	}
 
 	contentType := response.Header.Get("Content-Type")
@@ -56,7 +57,7 @@ func (nexus Nexus2x) errorFromResponse(response *http.Response) Error {
 	return e
 }
 
-// tries to extract the message assuming body is a JSON object with a certain schema.
+// assuming body is a JSON object with a certain schema.
 func tryFromJSON(body []byte) (string, error) {
 	// try to extract a message from the response
 	var errorResponse struct {
@@ -71,7 +72,7 @@ func tryFromJSON(body []byte) (string, error) {
 	}
 
 	if len(errorResponse.Errors) != 1 { // can't find the actual message
-		return "", fmt.Errorf("Can't determine the correct message in %v", errorResponse)
+		return "", fmt.Errorf("Can't determine the message in %v", errorResponse)
 	}
 
 	// found a message; use it
@@ -82,13 +83,14 @@ func tryFromJSON(body []byte) (string, error) {
 // All I wanted was an html.Unmarshaller...
 var pRe = regexp.MustCompile(`<p>([^<]*)</p>`)
 
-// Tries to extract the error message from an HTML response. Sometimes it happens...
+// Tries to get the error message from an HTML response. Sometimes it happens...
 func tryFromHTML(body []byte) (string, error) {
 	matches := pRe.FindStringSubmatch(string(body))
 	if matches == nil {
 		return "", fmt.Errorf("Can't find a message in %v", string(body))
 	}
 
-	// matches should have the format [ "<p>message</p>" "message" ], so we want the second element
+	// matches should have the format [ "<p>message</p>" "message" ], so we want
+	// the second element
 	return matches[1], nil
 }

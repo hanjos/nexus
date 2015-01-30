@@ -6,8 +6,9 @@ import (
 	"strings"
 )
 
-// Criteria represents a search request. It compiles to a single map with the parameters Nexus expects. Nexus' API
-// supports 4 different types of searches, but in the end, all we need is a map holding the parameters to pass along.
+// Criteria represents a search request. It compiles to a single map with the
+// parameters Nexus expects. Nexus' API supports 4 different types of searches,
+// but in the end, all we need is a map holding the parameters to pass along.
 type Criteria interface {
 	Parameters() map[string]string
 }
@@ -15,7 +16,8 @@ type Criteria interface {
 // All is the zero value for Criteria. Its Parameters() returns an empty map.
 const All = noCriteria(true)
 
-// there's no reason for more than one value to exist, so it's unexported and made bool for Go to allow a const.
+// there's no reason for more than one value to exist, so it's unexported and
+// made bool for Go to allow a const.
 type noCriteria bool
 
 // Parameters implements the search.Criteria interface.
@@ -28,8 +30,8 @@ func (empty noCriteria) String() string {
 	return "search.All"
 }
 
-// OrZero returns the given criteria untouched if it's not nil, and search.All otherwise. Useful for when one must
-// ensure that the given criteria is non-nil.
+// OrZero returns the given criteria untouched if it's not nil, and search.All
+// otherwise. Useful for when one must ensure a non-nil criteria.
 func OrZero(c Criteria) Criteria {
 	if c == nil {
 		return All
@@ -38,8 +40,10 @@ func OrZero(c Criteria) Criteria {
 	return c
 }
 
-// ByCoordinates searches by Maven project coordinates (http://maven.apache.org/pom.html#Maven_Coordinates). Nexus'
-// search by coordinates has certain issues and peculiarities, some shown in the examples below.
+// ByCoordinates searches by Maven project coordinates
+// (http://maven.apache.org/pom.html#Maven_Coordinates). Nexus' search by
+// coordinates has certain issues and peculiarities, some shown in the examples
+// below.
 type ByCoordinates struct {
 	GroupID    string // e.g. com.atlassian.maven.plugins
 	ArtifactID string // e.g. maven-jgitflow-plugin
@@ -154,7 +158,8 @@ func (byRepo ByRepository) String() string {
 	return "search.ByRepository(" + string(byRepo) + ")"
 }
 
-// InRepository searches for all artifacts in the given repository ID following the given criteria.
+// InRepository searches for all artifacts in the given repository ID following
+// the given criteria.
 type InRepository struct {
 	RepositoryID string // e.g. releases
 
@@ -171,5 +176,7 @@ func (inRepo InRepository) Parameters() map[string]string {
 
 // String implements the fmt.Stringer interface.
 func (inRepo InRepository) String() string {
-	return "search.InRepository(" + inRepo.RepositoryID + ", " + fmt.Sprintf("%v", inRepo.Criteria) + ")"
+	return "search.InRepository(" +
+		inRepo.RepositoryID + ", " +
+		fmt.Sprintf("%v", inRepo.Criteria) + ")"
 }

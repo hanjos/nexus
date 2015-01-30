@@ -1,7 +1,8 @@
 package nexus
 
-// Repository is a non-group Nexus repository. Nexus actually provides a bit more data, but this should be enough for
-// most uses. Groups aren't considered repositories by Nexus' API; there's a separate call for them.
+// Repository is a non-group Nexus repository. Nexus actually provides a bit
+// more data, but this should be enough for most uses. Groups aren't considered
+// repositories by Nexus' API; there's a separate call for them.
 type Repository struct {
 	ID        string // e.g. releases
 	Name      string // e.g. Releases

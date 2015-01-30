@@ -63,6 +63,7 @@ func ExampleNexus2x_Artifacts() {
 			"releases",
 			search.ByKeyword("javax.enterprise")})
 
-	// searching for every artifact in Nexus (WARNING: this can take a LOOONG time - and memory!)
+	// searching for every artifact in Nexus (WARNING: this can take a LOOONG
+	// time - and memory!)
 	n.Artifacts(search.All)
 }
