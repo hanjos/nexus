@@ -32,4 +32,5 @@ _testmain.go
 # inline tests
 cmd
 
-
+# OS crap
+.DS_Store
