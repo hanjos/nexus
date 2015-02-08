@@ -355,13 +355,13 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 		return nil, err
 	}
 
-	var payload *infoSearchResponse
+	var payload *ArtifactInfo
 	err = xml.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
 	}
 
-	return extractInfoFrom(payload, artifact), nil
+	return payload, nil
 }
 
 func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
@@ -397,40 +397,44 @@ func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 	return payload.Data.RepositoryPath, nil
 }
 
-type infoSearchResponse struct {
-	Data struct {
-		MimeType     string `xml:"mimeType"`
-		Uploader     string `xml:"uploader"`
-		Uploaded     int64  `xml:"uploaded"`
-		LastChanged  int64  `xml:"lastChanged"`
-		Size         int64  `xml:"size"`
-		Sha1Hash     string `xml:"sha1Hash"`
-		Repositories []struct {
-			RepositoryID string `xml:"repositoryId"`
-			ArtifactURL  string `xml:"artifactUrl"`
-		} `xml:"repositories>org.sonatype.nexus.rest.model.RepositoryUrlResource"`
-	} `xml:"data"`
-}
+// UnmarshalXML implements the xml.Unmarshaler interface.
+func (info *ArtifactInfo) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var payload struct {
+		Data struct {
+			MimeType     string `xml:"mimeType"`
+			Uploader     string `xml:"uploader"`
+			Uploaded     int64  `xml:"uploaded"`
+			LastChanged  int64  `xml:"lastChanged"`
+			Size         int64  `xml:"size"`
+			Sha1Hash     string `xml:"sha1Hash"`
+			Repositories []struct {
+				RepositoryID string `xml:"repositoryId"`
+				ArtifactURL  string `xml:"artifactUrl"`
+			} `xml:"repositories>org.sonatype.nexus.rest.model.RepositoryUrlResource"`
+		} `xml:"data"`
+	}
 
-func extractInfoFrom(payload *infoSearchResponse, artifact *Artifact) *ArtifactInfo {
+	if err := d.DecodeElement(&payload, &start); err != nil {
+		return err
+	}
+
 	url := ""
 	for _, repo := range payload.Data.Repositories {
-		if repo.RepositoryID == artifact.RepositoryID {
+		if repo.RepositoryID == info.Artifact.RepositoryID {
 			url = repo.ArtifactURL
 			break
 		}
 	}
 
-	return &ArtifactInfo{
-		Artifact:    artifact,
-		Uploader:    payload.Data.Uploader,
-		Uploaded:    time.Unix(payload.Data.Uploaded, 0),
-		LastChanged: time.Unix(payload.Data.LastChanged, 0),
-		Sha1:        payload.Data.Sha1Hash,
-		Size:        util.ByteSize(payload.Data.Size),
-		MimeType:    payload.Data.MimeType,
-		URL:         url,
-	}
+	info.Uploader = payload.Data.Uploader
+	info.Uploaded = time.Unix(payload.Data.Uploaded, 0)
+	info.LastChanged = time.Unix(payload.Data.LastChanged, 0)
+	info.Sha1 = payload.Data.Sha1Hash
+	info.Size = util.ByteSize(payload.Data.Size)
+	info.MimeType = payload.Data.MimeType
+	info.URL = url
+
+	return nil
 }
 
 // repos is here to help unmarshal Nexus' responses about repositories.

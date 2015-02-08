@@ -85,9 +85,14 @@ type ArtifactInfo struct {
 	URL         string
 }
 
+// keep this private; nexus.InfoOf will fill the ArtifactInfo out
+func newInfoFromArtifact(artifact *Artifact) *ArtifactInfo {
+	return &ArtifactInfo{Artifact: artifact}
+}
+
 // String implements the fmt.Stringer interface.
 func (info ArtifactInfo) String() string {
-	return fmt.Sprintf("%v [SHA1 %v, Mime-Type %v, %v]",
+	return fmt.Sprintf("%v : [SHA1 %v, Mime-Type %v, %v]",
 		info.Artifact, info.Sha1, info.MimeType, info.Size)
 }
 
