@@ -334,8 +334,7 @@ func (nexus Nexus2x) fetchAllArtifacts() ([]*Artifact, error) {
 // given artifact.
 func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 	// first resolve the artifact: building the URL by hand may fail in some
-	// situations (e.g. snapshot artifacts, odd
-	// file names)
+	// situations (e.g. snapshot artifacts, odd file names)
 	path, err := nexus.fetchRepositoryPathOf(artifact)
 	if err != nil {
 		return nil, err
@@ -396,44 +395,6 @@ func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 	return payload.Data.RepositoryPath, nil
 }
 
-// repos is here to help unmarshal Nexus' responses about repositories.
-type repos struct {
-	Repositories []*Repository
-}
-
-// UnmarshalXML implements the xml.Unmarshaler interface.
-func (r *repos) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var payload struct {
-		Data []struct {
-			ID        string `xml:"id"`
-			Name      string `xml:"name"`
-			Type      string `xml:"repoType"`
-			Policy    string `xml:"repoPolicy"`
-			Format    string `xml:"format"`
-			RemoteURI string `xml:"remoteUri"`
-		} `xml:"data>repositories-item"`
-	}
-
-	if err := d.DecodeElement(&payload, &start); err != nil {
-		return err
-	}
-
-	for _, repo := range payload.Data {
-		newRepo := &Repository{
-			ID:        repo.ID,
-			Name:      repo.Name,
-			Type:      repo.Type,
-			Format:    repo.Format,
-			Policy:    repo.Policy,
-			RemoteURI: repo.RemoteURI,
-		}
-
-		r.Repositories = append(r.Repositories, newRepo)
-	}
-
-	return nil
-}
-
 // Repositories implements the Client interface, returning all repositories in
 // this Nexus.
 func (nexus Nexus2x) Repositories() ([]*Repository, error) {
@@ -453,5 +414,5 @@ func (nexus Nexus2x) Repositories() ([]*Repository, error) {
 		return nil, err
 	}
 
-	return payload.Repositories, nil
+	return *payload, nil
 }
