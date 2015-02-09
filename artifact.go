@@ -1,6 +1,7 @@
 package nexus
 
 import (
+	"encoding/xml"
 	"fmt"
 	"strings"
 	"time"
@@ -72,7 +73,8 @@ func (set *artifactSet) add(artifacts []*Artifact) {
 	}
 }
 
-// ArtifactInfo holds extra information about the given artifact.
+// ArtifactInfo holds extra information about an artifact. There are no
+// constructors; use nexus.InfoOf to fetch and build instances.
 type ArtifactInfo struct {
 	*Artifact
 
@@ -94,6 +96,58 @@ func newInfoFromArtifact(artifact *Artifact) *ArtifactInfo {
 func (info ArtifactInfo) String() string {
 	return fmt.Sprintf("%v : [SHA1 %v, Mime-Type %v, %v]",
 		info.Artifact, info.Sha1, info.MimeType, info.Size)
+}
+
+// UnmarshalXML implements the xml.Unmarshaler interface. The ArtifactInfo
+// should already have a valid *Artifact pointer; the rest of the information
+// will be extracted from the payload.
+func (info *ArtifactInfo) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	if info == nil {
+		return fmt.Errorf("Can't unmarshal to a nil *ArtifactInfo!")
+	}
+
+	if info.Artifact == nil {
+		return fmt.Errorf("Can't unmarshal an *ArtifactInfo with a nil *Artifact!")
+	}
+
+	var payload struct {
+		Data struct {
+			MimeType     string `xml:"mimeType"`
+			Uploader     string `xml:"uploader"`
+			Uploaded     int64  `xml:"uploaded"`
+			LastChanged  int64  `xml:"lastChanged"`
+			Size         int64  `xml:"size"`
+			Sha1Hash     string `xml:"sha1Hash"`
+			Repositories []struct {
+				RepositoryID string `xml:"repositoryId"`
+				ArtifactURL  string `xml:"artifactUrl"`
+			} `xml:"repositories>org.sonatype.nexus.rest.model.RepositoryUrlResource"`
+		} `xml:"data"`
+	}
+
+	if err := d.DecodeElement(&payload, &start); err != nil {
+		return err
+	}
+
+	// finding the URL of this artifact. We need to know from which repository
+	// the artifact is, so this is why we need the *Artifact already filled in
+	url := ""
+	for _, repo := range payload.Data.Repositories {
+		if repo.RepositoryID == info.Artifact.RepositoryID {
+			url = repo.ArtifactURL
+			break
+		}
+	}
+
+	info.Uploader = payload.Data.Uploader
+	info.Uploaded = time.Unix(payload.Data.Uploaded, 0)
+	info.LastChanged = time.Unix(payload.Data.LastChanged, 0)
+	info.Sha1 = payload.Data.Sha1Hash
+	info.Size = util.ByteSize(payload.Data.Size)
+	info.MimeType = payload.Data.MimeType
+	info.URL = url
+
+	return nil
 }
 
 // A make-shift map-reducer, distributes an artifact search in multiple

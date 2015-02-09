@@ -6,7 +6,6 @@ import (
 	"io"
 	"net/http"
 	"strconv"
-	"time"
 
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
@@ -355,7 +354,7 @@ func (nexus Nexus2x) InfoOf(artifact *Artifact) (*ArtifactInfo, error) {
 		return nil, err
 	}
 
-	var payload *ArtifactInfo
+	payload := newInfoFromArtifact(artifact)
 	err = xml.Unmarshal(body, &payload)
 	if err != nil {
 		return nil, err
@@ -395,46 +394,6 @@ func (nexus Nexus2x) fetchRepositoryPathOf(artifact *Artifact) (string, error) {
 	}
 
 	return payload.Data.RepositoryPath, nil
-}
-
-// UnmarshalXML implements the xml.Unmarshaler interface.
-func (info *ArtifactInfo) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
-	var payload struct {
-		Data struct {
-			MimeType     string `xml:"mimeType"`
-			Uploader     string `xml:"uploader"`
-			Uploaded     int64  `xml:"uploaded"`
-			LastChanged  int64  `xml:"lastChanged"`
-			Size         int64  `xml:"size"`
-			Sha1Hash     string `xml:"sha1Hash"`
-			Repositories []struct {
-				RepositoryID string `xml:"repositoryId"`
-				ArtifactURL  string `xml:"artifactUrl"`
-			} `xml:"repositories>org.sonatype.nexus.rest.model.RepositoryUrlResource"`
-		} `xml:"data"`
-	}
-
-	if err := d.DecodeElement(&payload, &start); err != nil {
-		return err
-	}
-
-	url := ""
-	for _, repo := range payload.Data.Repositories {
-		if repo.RepositoryID == info.Artifact.RepositoryID {
-			url = repo.ArtifactURL
-			break
-		}
-	}
-
-	info.Uploader = payload.Data.Uploader
-	info.Uploaded = time.Unix(payload.Data.Uploaded, 0)
-	info.LastChanged = time.Unix(payload.Data.LastChanged, 0)
-	info.Sha1 = payload.Data.Sha1Hash
-	info.Size = util.ByteSize(payload.Data.Size)
-	info.MimeType = payload.Data.MimeType
-	info.URL = url
-
-	return nil
 }
 
 // repos is here to help unmarshal Nexus' responses about repositories.

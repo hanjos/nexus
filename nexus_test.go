@@ -5,6 +5,7 @@ import (
 	"github.com/hanjos/nexus/credentials"
 	"github.com/hanjos/nexus/search"
 
+	"encoding/xml"
 	"fmt"
 	"reflect"
 	"testing"
@@ -13,6 +14,42 @@ import (
 func TestNexus2xImplementsClient(t *testing.T) {
 	if _, ok := interface{}(nexus.Nexus2x{}).(nexus.Client); !ok {
 		t.Errorf("nexus.Nexus2x does not implement nexus.Client!")
+	}
+}
+
+func TestArtifactInfoPtrImplementsXmlUnmarshaler(t *testing.T) {
+	if _, ok := interface{}(&nexus.ArtifactInfo{}).(xml.Unmarshaler); !ok {
+		t.Errorf("nexus.ArtifactInfo does not implement xml.Unmarshaler!")
+	}
+}
+
+func TestCantUnmarshalNilArtifactInfo(t *testing.T) {
+	var info *nexus.ArtifactInfo
+
+	err := info.UnmarshalXML(nil, xml.StartElement{})
+
+	if err == nil {
+		t.Errorf("Expected an error!")
+		return
+	}
+
+	if err.Error() != "Can't unmarshal to a nil *ArtifactInfo!" {
+		t.Errorf("Expected a different error, not '%v'", err.Error())
+	}
+}
+
+func TestCantUnmarshalArtifactInfoWithANilArtifact(t *testing.T) {
+	info := &nexus.ArtifactInfo{}
+
+	err := info.UnmarshalXML(nil, xml.StartElement{})
+
+	if err == nil {
+		t.Errorf("Expected an error!")
+		return
+	}
+
+	if err.Error() != "Can't unmarshal an *ArtifactInfo with a nil *Artifact!" {
+		t.Errorf("Expected a different error, not '%v'", err.Error())
 	}
 }
 
