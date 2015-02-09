@@ -117,22 +117,33 @@ func (nexus Nexus2x) Artifacts(criteria search.Criteria) ([]*Artifact, error) {
 	return nexus.fetchArtifactsWhere(params)
 }
 
+// holds the relevant information from Nexus' artifact search.
 type artifactSearchResponse struct {
-	Artifacts []struct {
-		GroupID      string `xml:"groupId"`
-		ArtifactID   string `xml:"artifactId"`
-		Version      string `xml:"version"`
-		ArtifactHits []struct {
-			RepositoryID  string `xml:"repositoryId"`
-			ArtifactLinks []struct {
-				Extension  string `xml:"extension"`
-				Classifier string `xml:"classifier"`
-			} `xml:"artifactLinks>artifactLink"`
-		} `xml:"artifactHits>artifactHit"`
-	} `xml:"data>artifact"`
+	Count     int
+	Artifacts []*Artifact
 }
 
-func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
+// UnmarshalXML implements the xml.Unmarshaler interface.
+func (r *artifactSearchResponse) UnmarshalXML(d *xml.Decoder, start xml.StartElement) error {
+	var payload struct {
+		Artifacts []struct {
+			GroupID      string `xml:"groupId"`
+			ArtifactID   string `xml:"artifactId"`
+			Version      string `xml:"version"`
+			ArtifactHits []struct {
+				RepositoryID  string `xml:"repositoryId"`
+				ArtifactLinks []struct {
+					Extension  string `xml:"extension"`
+					Classifier string `xml:"classifier"`
+				} `xml:"artifactLinks>artifactLink"`
+			} `xml:"artifactHits>artifactHit"`
+		} `xml:"data>artifact"`
+	}
+
+	if err := d.DecodeElement(&payload, &start); err != nil {
+		return err
+	}
+
 	var artifacts = []*Artifact{}
 
 	for _, artifact := range payload.Artifacts {
@@ -151,7 +162,10 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 		}
 	}
 
-	return artifacts
+	r.Count = len(payload.Artifacts)
+	r.Artifacts = artifacts
+
+	return nil
 }
 
 // a slight modification of Go's v, ok := m[key] idiom. has returns false for
@@ -159,11 +173,7 @@ func extractArtifactsFrom(payload *artifactSearchResponse) []*Artifact {
 func has(m map[string]string, key string) (value string, ok bool) {
 	value, ok = m[key]
 
-	if ok && value == "" { // not ok!
-		return value, false
-	}
-
-	return value, ok
+	return value, ok && value != ""
 }
 
 // returns all artifacts in this Nexus which pass the given filter. The expected
@@ -212,12 +222,12 @@ func (nexus Nexus2x) fetchArtifactsWhere(filter map[string]string) ([]*Artifact,
 
 		// extract and store the artifacts, filtering out the POMs if necessary.
 		// The set ensures we ignore repetitions.
-		artifacts.add(filterPoms(extractArtifactsFrom(payload), filter))
+		artifacts.add(filterPoms(payload.Artifacts, filter))
 
 		// a lower bound for the number of artifacts returned, since every GAV in
 		// the payload holds at least one artifact. There will be some repetitions,
 		// but artifacts takes care of that.
-		offset = len(payload.Artifacts)
+		offset = payload.Count
 	}
 
 	return artifacts.data, nil

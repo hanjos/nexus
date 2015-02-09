@@ -1,30 +1,61 @@
-package nexus_test
+package nexus
 
 import (
-	"github.com/hanjos/nexus"
-	"github.com/hanjos/nexus/credentials"
-	"github.com/hanjos/nexus/search"
-
 	"encoding/xml"
-	"fmt"
-	"reflect"
 	"testing"
 )
 
 func TestNexus2xImplementsClient(t *testing.T) {
-	if _, ok := interface{}(nexus.Nexus2x{}).(nexus.Client); !ok {
+	if _, ok := interface{}(Nexus2x{}).(Client); !ok {
 		t.Errorf("nexus.Nexus2x does not implement nexus.Client!")
 	}
 }
 
 func TestArtifactInfoPtrImplementsXmlUnmarshaler(t *testing.T) {
-	if _, ok := interface{}(&nexus.ArtifactInfo{}).(xml.Unmarshaler); !ok {
+	if _, ok := interface{}(&ArtifactInfo{}).(xml.Unmarshaler); !ok {
 		t.Errorf("nexus.ArtifactInfo does not implement xml.Unmarshaler!")
 	}
 }
 
+var hasTests = []struct {
+	input    map[string]string
+	key      string
+	expected bool
+}{
+	{
+		map[string]string{"g": "g"},
+		"g",
+		true,
+	},
+	{
+		map[string]string{"g": "g"},
+		"a",
+		false,
+	},
+	{
+		map[string]string{"g": "g", "a": ""},
+		"a",
+		false,
+	},
+}
+
+func TestHasWorks(t *testing.T) {
+	for _, test := range hasTests {
+		switch test.expected {
+		case true:
+			if _, ok := has(test.input, test.key); !ok {
+				t.Errorf("Expected a value for key '%v' in %v, nothing found", test.key, test.input)
+			}
+		case false:
+			if v, ok := has(test.input, test.key); ok {
+				t.Errorf("Didn't expect anything for key '%v' in %v, found %v", test.key, test.input, v)
+			}
+		}
+	}
+}
+
 func TestCantUnmarshalNilArtifactInfo(t *testing.T) {
-	var info *nexus.ArtifactInfo
+	var info *ArtifactInfo
 
 	err := info.UnmarshalXML(nil, xml.StartElement{})
 
@@ -39,7 +70,7 @@ func TestCantUnmarshalNilArtifactInfo(t *testing.T) {
 }
 
 func TestCantUnmarshalArtifactInfoWithANilArtifact(t *testing.T) {
-	info := &nexus.ArtifactInfo{}
+	info := &ArtifactInfo{}
 
 	err := info.UnmarshalXML(nil, xml.StartElement{})
 
@@ -51,56 +82,4 @@ func TestCantUnmarshalArtifactInfoWithANilArtifact(t *testing.T) {
 	if err.Error() != "Can't unmarshal an *ArtifactInfo with a nil *Artifact!" {
 		t.Errorf("Expected a different error, not '%v'", err.Error())
 	}
-}
-
-func Example() {
-	n := nexus.New("https://maven.java.net", credentials.None)
-
-	// obtaining all repositories in Nexus
-	repositories, err := n.Repositories()
-	if err != nil {
-		fmt.Printf("%v: %v", reflect.TypeOf(err), err)
-		return
-	}
-
-	// printing out all artifacts which are in a hosted repository, and have
-	// both 'javax.enterprise' in their groupID and a 'sources' classifier.
-	for _, repo := range repositories {
-		if repo.Type != "hosted" {
-			continue
-		}
-
-		artifacts, err := n.Artifacts(
-			search.InRepository{
-				RepositoryID: repo.ID,
-				Criteria: search.ByCoordinates{
-					GroupID:    "javax.enterprise*",
-					Classifier: "sources"}})
-
-		if err != nil {
-			fmt.Printf("%v: %v", reflect.TypeOf(err), err)
-			return
-		}
-
-		for _, a := range artifacts {
-			fmt.Println(a)
-		}
-	}
-}
-
-func ExampleNexus2x_Artifacts() {
-	n := nexus.New("http://maven.java.net", credentials.None)
-
-	// using a simple search
-	n.Artifacts(search.ByClassname("javax.servlet.Servlet"))
-
-	// using a composite search
-	n.Artifacts(
-		search.InRepository{
-			RepositoryID: "releases",
-			Criteria:     search.ByKeyword("javax.enterprise")})
-
-	// searching for every artifact in Nexus (WARNING: this can take a LOOONG
-	// time - and memory!)
-	n.Artifacts(search.All)
 }
