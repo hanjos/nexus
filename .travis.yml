@@ -1,3 +1,4 @@
 language: go
+go_import_path: sbrubbles.org/go/nexus
 go:
   - tip
