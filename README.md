@@ -31,7 +31,7 @@ func main() {
   artifacts, err := n.Artifacts(
     search.InRepository{
       "shamalamadingdong",
-      search.ByKeyword("com.sbrubbles*")})
+      search.ByKeyword("org.sbrubbles*")})
 
   if err != nil {
     fmt.Printf("%v: %v", reflect.TypeOf(err), err)
