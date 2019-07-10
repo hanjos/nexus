@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hanjos/nexus/util"
+	"sbrubbles.org/go/nexus/util"
 )
 
 // Artifact is a Maven coordinate to a single artifact, plus the repository

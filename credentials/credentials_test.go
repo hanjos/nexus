@@ -1,8 +1,8 @@
 package credentials_test
 
 import (
-	"github.com/hanjos/nexus/credentials"
 	"net/http"
+	"sbrubbles.org/go/nexus/credentials"
 	"testing"
 )
 

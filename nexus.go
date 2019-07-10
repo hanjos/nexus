@@ -7,9 +7,9 @@ import (
 	"net/http"
 	"strconv"
 
-	"github.com/hanjos/nexus/credentials"
-	"github.com/hanjos/nexus/search"
-	"github.com/hanjos/nexus/util"
+	"sbrubbles.org/go/nexus/credentials"
+	"sbrubbles.org/go/nexus/search"
+	"sbrubbles.org/go/nexus/util"
 )
 
 // Client accesses a Nexus instance. The default Client should work for the

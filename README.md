@@ -1,7 +1,7 @@
 A Go library to pull data from a [Sonatype Nexus](http://www.sonatype.com/nexus) instance.
 
 [![TravisCI](https://travis-ci.org/hanjos/nexus.svg)](https://travis-ci.org/hanjos/nexus)
-[![GoDoc](https://godoc.org/github.com/hanjos/nexus?status.svg)](https://godoc.org/github.com/hanjos/nexus)
+[![GoDoc](https://godoc.org/sbrubbles.org/go/nexus?status.svg)](https://godoc.org/sbrubbles.org/go/nexus)
 
 How?
 ----
@@ -54,4 +54,4 @@ And it was a good excuse to try Go out :)
 License
 -------
 
-MIT License. See [LICENSE](https://github.com/hanjos/nexus/blob/master/LICENSE) for the gory details.
+MIT License. See [LICENSE](https://sbrubbles.org/go/nexus/blob/master/LICENSE) for the gory details.

@@ -1,10 +1,10 @@
 package search_test
 
 import (
-	"github.com/hanjos/nexus"
-	"github.com/hanjos/nexus/credentials"
-	"github.com/hanjos/nexus/search"
-	"github.com/hanjos/nexus/util"
+	"sbrubbles.org/go/nexus"
+	"sbrubbles.org/go/nexus/credentials"
+	"sbrubbles.org/go/nexus/search"
+	"sbrubbles.org/go/nexus/util"
 
 	"testing"
 )
