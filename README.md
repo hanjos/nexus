@@ -54,4 +54,4 @@ And it was a good excuse to try Go out :)
 License
 -------
 
-MIT License. See [LICENSE](https://sbrubbles.org/go/nexus/blob/master/LICENSE) for the gory details.
+MIT License. See [LICENSE](https://github.com/hanjos/nexus/blob/master/LICENSE) for the gory details.
