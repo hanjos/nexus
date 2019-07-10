@@ -9,7 +9,7 @@ How?
 `go get` should see you through:
 
 ```sh
-go get github.com/hanjos/nexus
+go get sbrubbles.org/go/nexus
 ```
 
 And therefore `import`:
@@ -19,9 +19,9 @@ package main
 
 import (
   "fmt"
-  "github.com/hanjos/nexus"
-  "github.com/hanjos/nexus/credentials"
-  "github.com/hanjos/nexus/search"
+  "sbrubbles.org/go/nexus"
+  "sbrubbles.org/go/nexus/credentials"
+  "sbrubbles.org/go/nexus/search"
   "reflect"
 )
 
