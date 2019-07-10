@@ -5,7 +5,7 @@ import (
 	"reflect"
 	"testing"
 
-	"github.com/hanjos/nexus/util"
+	"sbrubbles.org/go/nexus/util"
 )
 
 var cleanSlashesOK = []struct {
