@@ -2,7 +2,7 @@
 Package credentials provides credentials to an http.Request. Some Nexus API
 calls can only be done by users with the proper authorization.
 */
-package credentials
+package credentials // import "sbrubbles.org/go/nexus/credentials"
 
 import (
 	"fmt"

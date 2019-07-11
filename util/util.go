@@ -1,5 +1,5 @@
 // Package util stores useful helper code.
-package util
+package util // import "sbrubbles.org/go/nexus/util"
 
 import (
 	"fmt"

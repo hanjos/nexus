@@ -1,5 +1,5 @@
 // Package search provides a mini-DSL for nexus.Client.Artifacts().
-package search
+package search // import "sbrubbles.org/go/nexus/search"
 
 import (
 	"fmt"
