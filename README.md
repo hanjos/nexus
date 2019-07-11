@@ -31,7 +31,7 @@ func main() {
   artifacts, err := n.Artifacts(
     search.InRepository{
       "shamalamadingdong",
-      search.ByKeyword("com.sbrubbles*")})
+      search.ByKeyword("org.sbrubbles*")})
 
   if err != nil {
     fmt.Printf("%v: %v", reflect.TypeOf(err), err)
@@ -54,4 +54,4 @@ And it was a good excuse to try Go out :)
 License
 -------
 
-MIT License. See [LICENSE](https://sbrubbles.org/go/nexus/blob/master/LICENSE) for the gory details.
+MIT License. See [LICENSE](https://github.com/hanjos/nexus/blob/master/LICENSE) for the gory details.
